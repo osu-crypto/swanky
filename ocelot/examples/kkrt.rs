@@ -5,7 +5,7 @@
 // See LICENSE for licensing information.
 
 use ocelot::oprf::{KkrtReceiver, KkrtSender, Receiver, Sender};
-use scuttlebutt::{AesRng, Block, TrackChannel};
+use scuttlebutt::{AesRng, Block, Channel, TrackChannel};
 use std::{
     io::{BufReader, BufWriter},
     os::unix::net::UnixStream,
@@ -24,7 +24,7 @@ fn _test_oprf(n: usize) {
         let mut rng = AesRng::new();
         let reader = BufReader::new(sender.try_clone().unwrap());
         let writer = BufWriter::new(sender);
-        let mut channel = TrackChannel::new(reader, writer);
+        let mut channel = TrackChannel::new(Channel::new(reader, writer));
         let start = SystemTime::now();
         let mut oprf = KkrtSender::init(&mut channel, &mut rng).unwrap();
         println!(
@@ -50,7 +50,7 @@ fn _test_oprf(n: usize) {
     let mut rng = AesRng::new();
     let reader = BufReader::new(receiver.try_clone().unwrap());
     let writer = BufWriter::new(receiver);
-    let mut channel = TrackChannel::new(reader, writer);
+    let mut channel = TrackChannel::new(Channel::new(reader, writer));
     let start = SystemTime::now();
     let mut oprf = KkrtReceiver::init(&mut channel, &mut rng).unwrap();
     println!(

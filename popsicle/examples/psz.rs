@@ -5,7 +5,7 @@
 // See LICENSE for licensing information.
 
 use popsicle::psz::{Receiver, Sender};
-use scuttlebutt::{AesRng, TrackChannel};
+use scuttlebutt::{AesRng, Channel, TrackChannel};
 use std::{
     io::{BufReader, BufWriter},
     os::unix::net::UnixStream,
@@ -32,7 +32,7 @@ fn psi(ninputs: usize, nbytes: usize) {
         let mut rng = AesRng::new();
         let reader = BufReader::new(sender.try_clone().unwrap());
         let writer = BufWriter::new(sender);
-        let mut channel = TrackChannel::new(reader, writer);
+        let mut channel = TrackChannel::new(Channel::new(reader, writer));
         let start = SystemTime::now();
         let mut psi = Sender::init(&mut channel, &mut rng).unwrap();
         println!(
@@ -57,7 +57,7 @@ fn psi(ninputs: usize, nbytes: usize) {
     let mut rng = AesRng::new();
     let reader = BufReader::new(receiver.try_clone().unwrap());
     let writer = BufWriter::new(receiver);
-    let mut channel = TrackChannel::new(reader, writer);
+    let mut channel = TrackChannel::new(Channel::new(reader, writer));
     let start = SystemTime::now();
     let mut psi = Receiver::init(&mut channel, &mut rng).unwrap();
     println!(

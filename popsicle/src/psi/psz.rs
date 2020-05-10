@@ -72,7 +72,7 @@ impl Sender {
                 self.oprf.encode(inputs[j] ^ hidx, &mut encoded);
                 encoded ^= seeds[bin];
 
-                channel.write_bytes(&encoded.prefix(masksize))?;
+                channel.write_all(&encoded.prefix(masksize))?;
             }
         }
         channel.flush()?;
@@ -118,8 +118,8 @@ impl Sender {
                 let mut ct = payloads[j];
                 scuttlebutt::utils::xor_inplace(ct.as_mut(), key);
 
-                channel.write_bytes(&tag[0..masksize])?;
-                channel.write_bytes(ct.as_ref())?;
+                channel.write_all(&tag[0..masksize])?;
+                channel.write_all(ct.as_ref())?;
             }
         }
         channel.flush()?;
@@ -199,7 +199,7 @@ impl Receiver {
         for h in hs.iter_mut() {
             for _ in 0..n {
                 let mut tag = vec![0; masksize];
-                channel.read_bytes(&mut tag)?;
+                channel.read_exact(&mut tag)?;
                 let ct = channel.read_block()?;
                 h.insert(tag, ct);
             }

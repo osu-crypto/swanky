@@ -190,7 +190,7 @@ fn secret_sharing_of_zero<R: Rng>(nparties: usize, rng: &mut R) -> Vec<Block512>
 mod tests {
     use super::*;
     use rand::Rng;
-    use scuttlebutt::{AesRng, SyncChannel};
+    use scuttlebutt::{AesRng, Channel};
     use std::{
         io::{BufReader, BufWriter},
         os::unix::net::UnixStream,
@@ -234,9 +234,9 @@ mod tests {
                 if i != j {
                     let (s, r) = UnixStream::pair().unwrap();
                     let left =
-                        SyncChannel::new(BufReader::new(s.try_clone().unwrap()), BufWriter::new(s));
+                        Channel::new(BufReader::new(s.try_clone().unwrap()), BufWriter::new(s));
                     let right =
-                        SyncChannel::new(BufReader::new(r.try_clone().unwrap()), BufWriter::new(r));
+                        Channel::new(BufReader::new(r.try_clone().unwrap()), BufWriter::new(r));
                     channels[i][j] = Some((j, left));
                     channels[j][i] = Some((i, right));
                 }

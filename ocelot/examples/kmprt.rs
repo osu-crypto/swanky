@@ -6,7 +6,7 @@
 
 use ocelot::oprf::{KmprtReceiver, KmprtSender};
 use rand::Rng;
-use scuttlebutt::{AesRng, Block, Block512, TrackChannel};
+use scuttlebutt::{AesRng, Block, Block512, Channel, TrackChannel};
 use std::{
     io::{BufReader, BufWriter},
     os::unix::net::UnixStream,
@@ -30,7 +30,7 @@ fn run(ninputs: usize, npoints: usize) {
         let mut rng = AesRng::new();
         let reader = BufReader::new(sender.try_clone().unwrap());
         let writer = BufWriter::new(sender);
-        let mut channel = TrackChannel::new(reader, writer);
+        let mut channel = TrackChannel::new(Channel::new(reader, writer));
         let start = SystemTime::now();
         let mut oprf = KmprtSender::init(&mut channel, &mut rng).unwrap();
         println!(
@@ -55,7 +55,7 @@ fn run(ninputs: usize, npoints: usize) {
     let mut rng = AesRng::new();
     let reader = BufReader::new(receiver.try_clone().unwrap());
     let writer = BufWriter::new(receiver);
-    let mut channel = TrackChannel::new(reader, writer);
+    let mut channel = TrackChannel::new(Channel::new(reader, writer));
     let start = SystemTime::now();
     let mut oprf = KmprtReceiver::init(&mut channel, &mut rng).unwrap();
     println!(

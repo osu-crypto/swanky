@@ -15,8 +15,8 @@ use crate::{
     wire::Wire,
 };
 use itertools::Itertools;
-use scuttlebutt::{AbstractChannel, AesRng, Block, Channel};
-use std::{collections::HashMap, convert::TryInto, rc::Rc};
+use scuttlebutt::{AesRng, Block, Channel};
+use std::{collections::HashMap, convert::TryInto};
 
 /// Static evaluator for a circuit, created by the `garble` function.
 ///
@@ -54,42 +54,38 @@ impl GarbledCircuit {
 
 /// Garble a circuit without streaming.
 pub fn garble(c: &Circuit) -> Result<(Encoder, GarbledCircuit), GarblerError> {
-    let channel = Channel::new(
+    let mut channel = Channel::new(
         GarbledReader::new(&[]),
         GarbledWriter::new(Some(c.num_nonfree_gates)),
     );
-    let channel_ = channel.clone();
 
     let rng = AesRng::new();
-    let mut garbler = Garbler::new(channel_, rng);
+    let en = {
+        let mut garbler = Garbler::new(&mut channel, rng);
 
-    // get input wires, ignoring encoded values
-    let gb_inps = (0..c.num_garbler_inputs())
-        .map(|i| {
-            let q = c.garbler_input_mod(i);
-            let (zero, _) = garbler.encode_wire(0, q);
-            zero
-        })
-        .collect_vec();
+        // get input wires, ignoring encoded values
+        let gb_inps = (0..c.num_garbler_inputs())
+            .map(|i| {
+                let q = c.garbler_input_mod(i);
+                let (zero, _) = garbler.encode_wire(0, q);
+                zero
+            })
+            .collect_vec();
 
-    let ev_inps = (0..c.num_evaluator_inputs())
-        .map(|i| {
-            let q = c.evaluator_input_mod(i);
-            let (zero, _) = garbler.encode_wire(0, q);
-            zero
-        })
-        .collect_vec();
+        let ev_inps = (0..c.num_evaluator_inputs())
+            .map(|i| {
+                let q = c.evaluator_input_mod(i);
+                let (zero, _) = garbler.encode_wire(0, q);
+                zero
+            })
+            .collect_vec();
 
-    c.eval(&mut garbler, &gb_inps, &ev_inps)?;
+        c.eval(&mut garbler, &gb_inps, &ev_inps)?;
 
-    let en = Encoder::new(gb_inps, ev_inps, garbler.get_deltas());
+        Encoder::new(gb_inps, ev_inps, garbler.get_deltas())
+    };
 
-    let gc = GarbledCircuit::new(
-        Rc::try_unwrap(channel.writer())
-            .unwrap()
-            .into_inner()
-            .blocks,
-    );
+    let gc = GarbledCircuit::new(channel.writer.blocks);
 
     Ok((en, gc))
 }

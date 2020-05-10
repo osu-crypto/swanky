@@ -32,6 +32,10 @@ impl<C: AbstractChannel> Evaluator<C> {
         }
     }
 
+    pub fn get_channel(&mut self) -> &mut C {
+        return &mut self.channel
+    }
+
     /// The current non-free gate index of the garbling computation.
     fn current_gate(&mut self) -> usize {
         let current = self.current_gate;

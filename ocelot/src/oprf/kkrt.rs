@@ -91,8 +91,8 @@ impl<OT: OtReceiver<Msg = Block> + SemiHonest> OprfSender for Sender<OT> {
             let range = j * nrows / 8..(j + 1) * nrows / 8;
             let mut q = &mut qs[range];
             self.rngs[j].fill_bytes(&mut q);
-            channel.read_bytes(&mut t0)?;
-            channel.read_bytes(&mut t1)?;
+            channel.read_exact(&mut t0)?;
+            channel.read_exact(&mut t1)?;
             scutils::xor_inplace(&mut q, if *b { &t1 } else { &t0 });
         }
         let qs = utils::transpose(&qs, ncols, nrows);
@@ -204,10 +204,10 @@ impl<OT: OtSender<Msg = Block> + SemiHonest> OprfReceiver for Receiver<OT> {
             let t1 = &t1s[range];
             self.rngs[j].0.fill_bytes(&mut t);
             scutils::xor_inplace(&mut t, &t0);
-            channel.write_bytes(&t)?;
+            channel.write_all(&t)?;
             self.rngs[j].1.fill_bytes(&mut t);
             scutils::xor_inplace(&mut t, &t1);
-            channel.write_bytes(&t)?;
+            channel.write_all(&t)?;
         }
         channel.flush()?;
         Ok(out[0..m].to_vec())

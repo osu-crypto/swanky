@@ -62,7 +62,7 @@ impl<OT: OtReceiver<Msg = Block> + SemiHonest> Sender<OT> {
         for (j, (b, rng)) in self.s.iter().zip(self.rngs.iter_mut()).enumerate() {
             let range = j * ncols / 8..(j + 1) * ncols / 8;
             let mut q = &mut qs[range];
-            channel.read_bytes(&mut u)?;
+            channel.read_exact(&mut u)?;
             rng.fill_bytes(&mut q);
             scutils::xor_inplace(&mut q, if *b { &u } else { &zero });
         }
@@ -190,7 +190,7 @@ impl<OT: OtSender<Msg = Block> + SemiHonest> Receiver<OT> {
             self.rngs[j].1.fill_bytes(&mut g);
             scutils::xor_inplace(&mut g, &t);
             scutils::xor_inplace(&mut g, &r);
-            channel.write_bytes(&g)?;
+            channel.write_all(&g)?;
         }
         channel.flush()?;
         Ok(utils::transpose(&ts, nrows, ncols))

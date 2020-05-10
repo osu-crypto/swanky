@@ -35,6 +35,10 @@ impl<C: AbstractChannel, RNG: CryptoRng + RngCore> Garbler<C, RNG> {
         }
     }
 
+    pub fn get_channel(&mut self) -> &mut C {
+        return &mut self.channel
+    }
+
     /// The current non-free gate index of the garbling computation
     fn current_gate(&mut self) -> usize {
         let current = self.current_gate;

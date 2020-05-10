@@ -4,21 +4,20 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{AbstractChannel, Channel};
+use crate::{AbstractChannel};
 use sha2::{Digest, Sha256};
 use std::io::{Read, Result, Write};
 
 /// An instantiation of the `AbstractChannel` trait which computes a running
 /// hash of all bytes read from and written to the channel.
-pub struct HashChannel<R, W> {
-    channel: Channel<R, W>,
+pub struct HashChannel<C> {
+    channel: C,
     hash: Sha256,
 }
 
-impl<R: Read, W: Write> HashChannel<R, W> {
+impl<C: AbstractChannel> HashChannel<C> {
     /// Make a new `HashChannel` from a `reader` and a `writer`.
-    pub fn new(reader: R, writer: W) -> Self {
-        let channel = Channel::new(reader, writer);
+    pub fn new(channel: C) -> Self {
         let hash = Sha256::new();
         Self { channel, hash }
     }
@@ -31,30 +30,25 @@ impl<R: Read, W: Write> HashChannel<R, W> {
     }
 }
 
-impl<R: Read, W: Write> AbstractChannel for HashChannel<R, W> {
+impl<C: AbstractChannel> Read for HashChannel<C> {
     #[inline]
-    fn write_bytes(&mut self, bytes: &[u8]) -> Result<()> {
-        self.hash.input(bytes);
-        self.channel.write_bytes(bytes)
+    fn read(&mut self, mut bytes: &mut [u8]) -> Result<usize> {
+        let bytes_read = self.channel.read(&mut bytes)?;
+        self.hash.input(&bytes[..bytes_read]);
+        Ok(bytes_read)
     }
+}
 
+impl<C: AbstractChannel> Write for HashChannel<C> {
     #[inline]
-    fn read_bytes(&mut self, mut bytes: &mut [u8]) -> Result<()> {
-        self.channel.read_bytes(&mut bytes)?;
-        self.hash.input(&bytes);
-        Ok(())
+    fn write(&mut self, bytes: &[u8]) -> Result<usize> {
+        let bytes_written = self.channel.write(bytes)?;
+        self.hash.input(&bytes[..bytes_written]);
+        Ok(bytes_written)
     }
 
     #[inline]
     fn flush(&mut self) -> Result<()> {
         self.channel.flush()
-    }
-
-    #[inline]
-    fn clone(&self) -> Self {
-        Self {
-            channel: self.channel.clone(),
-            hash: self.hash.clone(),
-        }
     }
 }

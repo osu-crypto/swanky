@@ -15,8 +15,8 @@ use crate::{
     wire::Wire,
 };
 use itertools::Itertools;
-use scuttlebutt::{AesRng, Block, Channel};
-use std::{collections::HashMap, convert::TryInto};
+use scuttlebutt::{AesRng, Channel};
+use std::collections::HashMap;
 
 /// Static evaluator for a circuit, created by the `garble` function.
 ///
@@ -24,18 +24,18 @@ use std::{collections::HashMap, convert::TryInto};
 #[derive(Debug)]
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 pub struct GarbledCircuit {
-    blocks: Vec<Block>,
+    data: Vec<u8>,
 }
 
 impl GarbledCircuit {
-    /// Create a new object from a vector of garbled gates and constant wires.
-    pub fn new(blocks: Vec<Block>) -> Self {
-        GarbledCircuit { blocks }
+    /// Create a new object from a vector of garbled data
+    pub fn new(data: Vec<u8>) -> Self {
+        GarbledCircuit { data }
     }
 
-    /// The number of garbled rows and constant wires in the garbled circuit.
+    /// The number of bytes in the garbled circuit.
     pub fn size(&self) -> usize {
-        self.blocks.len()
+        self.data.len()
     }
 
     /// Evaluate the garbled circuit.
@@ -45,7 +45,7 @@ impl GarbledCircuit {
         garbler_inputs: &[Wire],
         evaluator_inputs: &[Wire],
     ) -> Result<Vec<u16>, EvaluatorError> {
-        let channel = Channel::new(GarbledReader::new(&self.blocks), GarbledWriter::new(None));
+        let channel = Channel::new(&self.data[..], vec![]);
         let mut evaluator = Evaluator::new(channel);
         let outputs = c.eval(&mut evaluator, garbler_inputs, evaluator_inputs)?;
         Ok(outputs.expect("evaluator outputs always are Some(u16)"))
@@ -54,9 +54,10 @@ impl GarbledCircuit {
 
 /// Garble a circuit without streaming.
 pub fn garble(c: &Circuit) -> Result<(Encoder, GarbledCircuit), GarblerError> {
+    let mut garbled_data = vec![];
     let mut channel = Channel::new(
-        GarbledReader::new(&[]),
-        GarbledWriter::new(Some(c.num_nonfree_gates)),
+        &[] as &[u8],
+        &mut garbled_data
     );
 
     let rng = AesRng::new();
@@ -85,7 +86,7 @@ pub fn garble(c: &Circuit) -> Result<(Encoder, GarbledCircuit), GarblerError> {
         Encoder::new(gb_inps, ev_inps, garbler.get_deltas())
     };
 
-    let gc = GarbledCircuit::new(channel.writer.blocks);
+    let gc = GarbledCircuit::new(garbled_data);
 
     Ok((en, gc))
 }
@@ -157,77 +158,5 @@ impl Encoder {
             .zip(inputs)
             .map(|(id, &x)| self.encode_evaluator_input(x, id))
             .collect()
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// Reader and Writer impls for simple local structures to collect and release blocks
-
-/// Implementation of the `Read` trait for use by the `Evaluator`.
-#[derive(Debug)]
-struct GarbledReader {
-    blocks: Vec<Block>,
-    index: usize,
-}
-
-impl GarbledReader {
-    fn new(blocks: &[Block]) -> Self {
-        Self {
-            blocks: blocks.to_vec(),
-            index: 0,
-        }
-    }
-}
-
-impl std::io::Read for GarbledReader {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        assert_eq!(buf.len() % 16, 0);
-        for data in buf.chunks_mut(16) {
-            let block: [u8; 16] = self.blocks[self.index].into();
-            for (a, b) in data.iter_mut().zip(block.iter()) {
-                *a = *b;
-            }
-            self.index += 1;
-        }
-        Ok(buf.len())
-    }
-}
-
-/// Implementation of the `Write` trait for use by `Garbler`.
-#[derive(Debug)]
-pub struct GarbledWriter {
-    blocks: Vec<Block>,
-}
-
-impl GarbledWriter {
-    /// Make a new `GarbledWriter`.
-    pub fn new(ngates: Option<usize>) -> Self {
-        let blocks = if let Some(n) = ngates {
-            Vec::with_capacity(2 * n)
-        } else {
-            Vec::new()
-        };
-        Self { blocks }
-    }
-}
-
-impl std::io::Write for GarbledWriter {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        for item in buf.chunks(16) {
-            let bytes: [u8; 16] = match item.try_into() {
-                Ok(bytes) => bytes,
-                Err(_) => {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::InvalidData,
-                        "unable to map bytes to block",
-                    ));
-                }
-            };
-            self.blocks.push(Block::from(bytes));
-        }
-        Ok(buf.len())
-    }
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
     }
 }

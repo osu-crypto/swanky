@@ -7,7 +7,7 @@
 use crate::{
     errors::{EvaluatorError, FancyError},
     fancy::{Fancy, FancyReveal, HasModulus},
-    util::{output_tweak, tweak, tweak2},
+    util::{tweak, tweak2},
     wire::Wire,
 };
 use scuttlebutt::AbstractChannel;
@@ -19,7 +19,6 @@ use scuttlebutt::AbstractChannel;
 pub struct Evaluator<C> {
     channel: C,
     current_gate: usize,
-    current_output: usize,
 }
 
 impl<C: AbstractChannel> Evaluator<C> {
@@ -28,7 +27,6 @@ impl<C: AbstractChannel> Evaluator<C> {
         Evaluator {
             channel,
             current_gate: 0,
-            current_output: 0,
         }
     }
 
@@ -40,13 +38,6 @@ impl<C: AbstractChannel> Evaluator<C> {
     fn current_gate(&mut self) -> usize {
         let current = self.current_gate;
         self.current_gate += 1;
-        current
-    }
-
-    /// The current output index of the garbling computation.
-    fn current_output(&mut self) -> usize {
-        let current = self.current_output;
-        self.current_output += 1;
         current
     }
 
@@ -158,25 +149,8 @@ impl<C: AbstractChannel> Fancy for Evaluator<C> {
 
     fn output(&mut self, x: &Wire) -> Result<Option<u16>, EvaluatorError> {
         let q = x.modulus();
-        let i = self.current_output();
-
-        // Receive the output ciphertext from the garbler
-        let ct = self.channel.read_blocks(q as usize)?;
-
-        // Attempt to brute force x using the output ciphertext
-        let mut decoded = None;
-        for k in 0..q {
-            let hashed_wire = x.hash(output_tweak(i, k));
-            if hashed_wire == ct[k as usize] {
-                decoded = Some(k);
-                break;
-            }
-        }
-
-        if let Some(output) = decoded {
-            Ok(Some(output))
-        } else {
-            Err(EvaluatorError::DecodingFailed)
-        }
+        let c = self.channel.read_u16()?;
+        let output = (q as u32 + x.color() as u32 - c as u32) % q as u32;
+        Ok(Some(output as u16))
     }
 }

@@ -7,7 +7,7 @@
 use crate::{
     errors::{FancyError, GarblerError},
     fancy::{BinaryBundle, CrtBundle, Fancy, FancyReveal, HasModulus},
-    util::{output_tweak, tweak, tweak2, RngExt},
+    util::{tweak, tweak2, RngExt},
     wire::Wire,
 };
 use rand::{CryptoRng, RngCore};
@@ -18,7 +18,6 @@ use std::collections::HashMap;
 pub struct Garbler<C, RNG> {
     channel: C,
     deltas: HashMap<u16, Wire>, // map from modulus to associated delta wire-label.
-    current_output: usize,
     current_gate: usize,
     rng: RNG,
 }
@@ -30,7 +29,6 @@ impl<C: AbstractChannel, RNG: CryptoRng + RngCore> Garbler<C, RNG> {
             channel,
             deltas: HashMap::new(),
             current_gate: 0,
-            current_output: 0,
             rng,
         }
     }
@@ -55,13 +53,6 @@ impl<C: AbstractChannel, RNG: CryptoRng + RngCore> Garbler<C, RNG> {
         let w = Wire::rand_delta(&mut self.rng, q);
         self.deltas.insert(q, w.clone());
         w
-    }
-
-    /// The current output index of the garbling computation.
-    fn current_output(&mut self) -> usize {
-        let current = self.current_output;
-        self.current_output += 1;
-        current
     }
 
     /// Get the deltas, consuming the Garbler.
@@ -344,13 +335,7 @@ impl<C: AbstractChannel, RNG: RngCore + CryptoRng> Fancy for Garbler<C, RNG> {
     }
 
     fn output(&mut self, X: &Wire) -> Result<Option<u16>, GarblerError> {
-        let q = X.modulus();
-        let i = self.current_output();
-        let D = self.delta(q);
-        for k in 0..q {
-            let block = X.plus(&D.cmul(k)).hash(output_tweak(i, k)); // TODO: Could overlap with gate tweak.
-            self.channel.write_block(&block)?;
-        }
+        self.channel.write_u16(X.color())?;
         Ok(None)
     }
 }

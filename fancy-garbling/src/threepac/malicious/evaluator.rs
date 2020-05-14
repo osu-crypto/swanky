@@ -160,7 +160,10 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Fancy for E
 
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyReveal for Evaluator<C1, C2, RNG> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
-        self.evaluator.reveal(x).map_err(Self::Error::from)
+        let output = self.output(x)?.expect("Evaluator always outputs Some(u16)");
+        self.evaluator.get_channel().write_block(&x.as_block())?;
+        self.evaluator.get_channel().flush()?;
+        Ok(output)
     }
 }
 

@@ -43,12 +43,6 @@ pub fn tweak2(i: u64, j: u64) -> Block {
     Block::from(((i as u128) << 64) + j as u128)
 }
 
-/// Compute the output tweak for a garbled gate where i is the gate id and k is the value.
-pub fn output_tweak(i: usize, k: u16) -> Block {
-    let (left, _) = (i as u128).overflowing_shl(64);
-    Block::from(left + k as u128)
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // mixed radix stuff
 

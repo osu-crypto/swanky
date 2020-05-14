@@ -4,7 +4,7 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{errors::TwopacError, util::tweak2, Fancy, FancyInput, FancyReveal, Garbler as Gb, threepac::malicious::PartyId, Wire};
+use crate::{errors::{TwopacError, EvaluatorError}, util::tweak2, Fancy, FancyInput, FancyReveal, HasModulus, Garbler as Gb, threepac::malicious::PartyId, Wire};
 use rand::{CryptoRng, Rng, SeedableRng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
 
@@ -173,8 +173,20 @@ impl<C3: AbstractChannel, RNG: CryptoRng + Rng> Fancy for Garbler<C3, RNG> {
 
 impl<C3: AbstractChannel, RNG: CryptoRng + Rng, > FancyReveal for Garbler<C3, RNG> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
-        // TODO: Deal with malicious Evaluator
-        self.garbler.reveal(x).map_err(Self::Error::from)
+        let q = x.modulus();
+
+        self.output(x).map_err(Self::Error::from)?;
+        self.get_channel().flush()?;
+        let eval_wire = Wire::from_block(self.get_channel().read_block()?, x.modulus());
+        let output = ((q as u32 + eval_wire.color() as u32 - x.color() as u32) % q as u32) as u16;
+
+        // Check that the wire label is correct
+        if self.garbler.delta(q).cmul_mov(output).plus_mov(x) != eval_wire {
+            // TODO: Better errors
+            return Err(TwopacError::EvaluatorError(EvaluatorError::DecodingFailed));
+        }
+
+        Ok(output)
     }
 }
 

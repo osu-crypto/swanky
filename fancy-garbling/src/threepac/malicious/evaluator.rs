@@ -5,6 +5,7 @@
 // See LICENSE for licensing information.
 
 use std::io;
+use std::io::{Read, Write};
 use crate::{errors::TwopacError, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, Wire};
 use ocelot::ot::Receiver as OtReceiver;
 use rand::{CryptoRng, Rng};
@@ -43,7 +44,6 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
         })
     }
 
-    // TODO: get_channel
     pub fn get_channel_p1(&mut self) -> &mut C1 {
         &mut self.evaluator.get_channel().channel_p1
     }
@@ -63,12 +63,10 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
         let p1: u16 =  self.rng.gen();
         let channel_p1 = self.get_channel_p1();
         channel_p1.write_u16(p1)?;
-        channel_p1.flush()?;
 
         let p2 = (p1 as u32 + input as u32) % modulus as u32;
         let channel_p2 = self.get_channel_p2();
         channel_p2.write_u16(p2 as u16)?;
-        channel_p2.flush()?;
 
         Ok(())
     }
@@ -105,27 +103,20 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
 
     /// Perform OT and obtain wires for the evaluator's inputs.
     fn encode_many(&mut self, inputs: &[u16], moduli: &[u16]) -> Result<Vec<Wire>, TwopacError> {
-        let mut lens = Vec::new();
-        let mut bs = Vec::new();
         for (x, q) in inputs.iter().zip(moduli.iter()) {
-            let len = f32::from(*q).log(2.0).ceil() as usize;
-            for b in (0..len).map(|i| x & (1 << i) != 0) {
-                bs.push(b);
-            }
-            lens.push(len);
+            self.secret_share(*x, *q)?;
         }
-        let wires = self.run_ot(&bs)?;
-        let mut start = 0;
-        Ok(lens
-            .into_iter()
-            .zip(moduli.iter())
-            .map(|(len, q)| {
-                let range = start..start + len;
-                let chunk = &wires[range];
-                start += len;
-                combine(chunk, *q)
+        self.evaluator.get_channel().flush()?;
+
+        let wires_p1 = self.receive_many(moduli)?; // from P1
+        let wires_p2 = self.receive_many(moduli)?; // TODO: from P2
+        wires_p1
+            .iter()
+            .zip(wires_p2.iter())
+            .map(|(w1, w2)| {
+                self.evaluator.sub(w2, w1).map_err(Self::Error::from)
             })
-            .collect::<Vec<Wire>>())
+            .collect()
     }
 }
 
@@ -175,7 +166,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel> io::Read for VerifyEqualChannel<C1, C2> {
+impl<C1: AbstractChannel, C2: AbstractChannel> Read for VerifyEqualChannel<C1, C2> {
     #[inline]
     fn read(&mut self, mut bytes: &mut [u8]) -> io::Result<usize> {
         let bytes_read = self.channel_p1.read(&mut bytes)?;
@@ -191,7 +182,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel> io::Read for VerifyEqualChannel<C
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel> io::Write for VerifyEqualChannel<C1, C2> {
+impl<C1: AbstractChannel, C2: AbstractChannel> Write for VerifyEqualChannel<C1, C2> {
     #[inline]
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
         let bytes_written = self.channel_p1.write(bytes)?;

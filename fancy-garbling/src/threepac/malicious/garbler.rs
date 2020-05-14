@@ -121,19 +121,25 @@ impl<
     }
 
     fn receive_many(&mut self, qs: &[u16]) -> Result<Vec<Wire>, TwopacError> {
-        let n = qs.len();
-        let lens = qs.iter().map(|q| f32::from(*q).log(2.0).ceil() as usize);
-        let mut wires = Vec::with_capacity(n);
-        let mut inputs = Vec::with_capacity(lens.sum());
+        let shares = qs.iter().map(|q| {
+            self.garbler.get_channel().read_u16().map_err(Self::Error::from)
+        }).collect::<Result<Vec<u16>, TwopacError>>()?;
 
-        for q in qs.iter() {
-            let delta = self.garbler.delta(*q);
-            let (wire, input) = self._evaluator_input(&delta, *q);
-            wires.push(wire);
-            for i in input.into_iter() {
-                inputs.push(i);
-            }
-        }
+        let (wires1, wires2) = if !self.is_p2 {
+            let wires1 = self.encode_many(&shares, qs)?;
+            let wires2 = qs.iter().map(|q| { self.declare_input(*q) }).collect::<Result<Vec<Wire>, TwopacError>>()?;
+            (wires1, wires2)
+        } else {
+            let wires1 = qs.iter().map(|q| { self.declare_input(*q) }).collect::<Result<Vec<Wire>, TwopacError>>()?;
+            let wires2 = self.encode_many(&shares, qs)?;
+            (wires1, wires2)
+        };
+        let wires = wires1.iter()
+            .zip(wires2.iter())
+            .map(|(w1, w2)| {
+                self.garbler.sub(w2, w1).map_err(Self::Error::from)
+            })
+            .collect::<Result<Vec<Wire>, TwopacError>>()?;
         Ok(wires)
     }
 }

@@ -45,8 +45,8 @@ mod tests {
             for b in 0..2 {
                 for c in 0..2 {
                     let (mut p1top2, mut p2top1) = unix_channel_pair();
-                    let (mut p3top1, mut p1top3) = unix_channel_pair();
-                    let (mut p3top2, mut p2top3) = unix_channel_pair();
+                    let (p3top1, p1top3) = unix_channel_pair();
+                    let (p3top2, p2top3) = unix_channel_pair();
                     std::thread::spawn(move || {
                         let rng = AesRng::new();
                         let mut gb =

@@ -348,7 +348,7 @@ impl<C: AbstractChannel, RNG: RngCore + CryptoRng> Fancy for Garbler<C, RNG> {
         let i = self.current_output();
         let D = self.delta(q);
         for k in 0..q {
-            let block = X.plus(&D.cmul(k)).hash(output_tweak(i, k));
+            let block = X.plus(&D.cmul(k)).hash(output_tweak(i, k)); // TODO: Could overlap with gate tweak.
             self.channel.write_block(&block)?;
         }
         Ok(None)

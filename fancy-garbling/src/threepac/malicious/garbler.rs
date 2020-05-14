@@ -173,6 +173,7 @@ impl<C3: AbstractChannel, RNG: CryptoRng + Rng> Fancy for Garbler<C3, RNG> {
 
 impl<C3: AbstractChannel, RNG: CryptoRng + Rng, > FancyReveal for Garbler<C3, RNG> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
+        // TODO: Deal with malicious Evaluator
         self.garbler.reveal(x).map_err(Self::Error::from)
     }
 }

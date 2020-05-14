@@ -9,6 +9,13 @@
 mod evaluator;
 mod garbler;
 
+
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+pub enum PartyId {
+    Garbler,
+    Evaluator,
+}
+
 pub use evaluator::Evaluator;
 pub use garbler::Garbler;
 
@@ -44,14 +51,14 @@ mod tests {
                         Garbler::<UnixChannel, AesRng, ChouOrlandiSender>::new(sender, rng)
                             .unwrap();
                     let x = gb.encode(a, 3).unwrap();
-                    let ys = gb.receive_many(&[3]).unwrap();
+                    let ys = gb.receive_many(PartyId::Evaluator, &[3]).unwrap();
                     addition(&mut gb, &x, &ys[0]).unwrap();
                 });
                 let rng = AesRng::new();
                 let mut ev =
                     Evaluator::<UnixChannel, AesRng, ChouOrlandiReceiver>::new(receiver, rng)
                         .unwrap();
-                let x = ev.receive(3).unwrap();
+                let x = ev.receive(PartyId::Garbler, 3).unwrap();
                 let ys = ev.encode_many(&[b], &[3]).unwrap();
                 let output = addition(&mut ev, &x, &ys[0]).unwrap().unwrap();
                 assert_eq!((a + b) % 3, output);
@@ -100,7 +107,7 @@ mod tests {
         let rng = AesRng::new();
         let mut ev =
             Evaluator::<UnixChannel, AesRng, ChouOrlandiReceiver>::new(receiver, rng).unwrap();
-        let xs = ev.crt_receive_many(n, q).unwrap();
+        let xs = ev.crt_receive_many(PartyId::Garbler, n, q).unwrap();
         let result = relu(&mut ev, &xs).unwrap();
         assert_eq!(target, result);
     }
@@ -118,13 +125,13 @@ mod tests {
             let mut gb =
                 Garbler::<UnixChannel, AesRng, ChouOrlandiSender>::new(sender, rng).unwrap();
             let xs = gb.encode_many(&vec![0_u16; 128], &vec![2; 128]).unwrap();
-            let ys = gb.receive_many(&vec![2; 128]).unwrap();
+            let ys = gb.receive_many(PartyId::Evaluator, &vec![2; 128]).unwrap();
             circ_.eval(&mut gb, &xs, &ys).unwrap();
         });
         let rng = AesRng::new();
         let mut ev =
             Evaluator::<UnixChannel, AesRng, ChouOrlandiReceiver>::new(receiver, rng).unwrap();
-        let xs = ev.receive_many(&vec![2; 128]).unwrap();
+        let xs = ev.receive_many(PartyId::Garbler, &vec![2; 128]).unwrap();
         let ys = ev.encode_many(&vec![0_u16; 128], &vec![2; 128]).unwrap();
         circ.eval(&mut ev, &xs, &ys).unwrap();
         handle.join().unwrap();

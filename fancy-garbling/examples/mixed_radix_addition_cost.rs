@@ -11,7 +11,7 @@ fn main() {
 
     let mut b = Informer::new(Dummy::new());
     let xs = (0..n)
-        .map(|_| b.receive_bundle(&ps))
+        .map(|_| b.receive_bundle((), &ps))
         .collect::<Result<Vec<Bundle<DummyVal>>, DummyError>>()
         .unwrap();
     let z = b.mixed_radix_addition_msb_only(&xs).unwrap();

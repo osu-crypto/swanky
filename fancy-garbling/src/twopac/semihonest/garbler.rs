@@ -4,7 +4,7 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{errors::TwopacError, Fancy, FancyInput, FancyReveal, Garbler as Gb, twopac::PartyId, Wire};
+use crate::{errors::TwopacError, Fancy, FancyInput, FancyReveal, Garbler as Gb, twopac::semihonest::PartyId, Wire};
 use ocelot::ot::Sender as OtSender;
 use rand::{CryptoRng, Rng, SeedableRng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest};

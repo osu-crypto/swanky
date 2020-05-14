@@ -4,7 +4,7 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{errors::TwopacError, Evaluator as Ev, Fancy, FancyInput, FancyReveal, twopac::PartyId, Wire};
+use crate::{errors::TwopacError, Evaluator as Ev, Fancy, FancyInput, FancyReveal, twopac::semihonest::PartyId, Wire};
 use ocelot::ot::Receiver as OtReceiver;
 use rand::{CryptoRng, Rng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest};

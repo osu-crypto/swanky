@@ -4,15 +4,21 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
+use std::io;
 use crate::{errors::TwopacError, Evaluator as Ev, Fancy, FancyInput, FancyReveal, Wire};
 use ocelot::ot::Receiver as OtReceiver;
 use rand::{CryptoRng, Rng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
 
+/// A communication channel that verifies that both parties are providing the same data.
+struct VerifyEqualChannel<C1, C2> {
+    channel_p1: C1,
+    channel_p2: C2,
+}
+
 /// Malicious evaluator.
 pub struct Evaluator<C1, C2, RNG, OT> {
-    channel_p2: C2,
-    evaluator: Ev<C1>,
+    evaluator: Ev<VerifyEqualChannel<C1, C2>>,
     ot: OT,
     rng: RNG,
 }
@@ -25,9 +31,12 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
     /// Make a new `Evaluator`.
     pub fn new(mut channel_p1: C1, mut channel_p2: C2, mut rng: RNG) -> Result<Self, TwopacError> {
         let ot = OT::init(&mut channel_p1, &mut rng)?;
-        let evaluator = Ev::new(channel_p1);
-        Ok(Self {
+        let channel = VerifyEqualChannel {
+            channel_p1,
             channel_p2,
+        };
+        let evaluator = Ev::new(channel);
+        Ok(Self {
             evaluator,
             ot,
             rng,
@@ -147,6 +156,37 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG, OT> Fancy for Evaluator<C1, 
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT> FancyReveal for Evaluator<C1, C2, RNG, OT> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
         self.evaluator.reveal(x).map_err(Self::Error::from)
+    }
+}
+
+impl<C1: AbstractChannel, C2: AbstractChannel> io::Read for VerifyEqualChannel<C1, C2> {
+    #[inline]
+    fn read(&mut self, mut bytes: &mut [u8]) -> io::Result<usize> {
+        let bytes_read = self.channel_p1.read(&mut bytes)?;
+        let mut p2_buf = vec![0u8; bytes_read];
+        self.channel_p2.read_exact(&mut p2_buf[..])?;
+
+        // Check equality
+        if bytes[..bytes_read] != p2_buf[..] {
+            return Result::Err(io::Error::new(io::ErrorKind::ConnectionAborted, "Parties 1 and 2 disagree so someone's malicious"));
+        }
+
+        Ok(bytes_read)
+    }
+}
+
+impl<C1: AbstractChannel, C2: AbstractChannel> io::Write for VerifyEqualChannel<C1, C2> {
+    #[inline]
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        let bytes_written = self.channel_p1.write(bytes)?;
+        self.channel_p2.write_all(&bytes[..bytes_written])?;
+        Ok(bytes_written)
+    }
+
+    #[inline]
+    fn flush(&mut self) -> io::Result<()> {
+        self.channel_p1.flush()?;
+        self.channel_p2.flush()
     }
 }
 

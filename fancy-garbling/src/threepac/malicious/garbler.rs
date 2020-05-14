@@ -5,25 +5,23 @@
 // See LICENSE for licensing information.
 
 use crate::{errors::TwopacError, util::tweak2, Fancy, FancyInput, FancyReveal, Garbler as Gb, Wire};
-use ocelot::ot::Sender as OtSender;
 use rand::{CryptoRng, Rng, SeedableRng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
 
 /// Semi-honest garbler.
-pub struct Garbler<C3, RNG, OT> {
+pub struct Garbler<C3, RNG> {
     garbler: Gb<C3, RNG>,
-    ot: OT,
     is_p2: bool,
 }
 
-impl<C3, OT, RNG> std::ops::Deref for Garbler<C3, RNG, OT> {
+impl<C3, RNG> std::ops::Deref for Garbler<C3, RNG> {
     type Target = Gb<C3, RNG>;
     fn deref(&self) -> &Self::Target {
         &self.garbler
     }
 }
 
-impl<C3, OT, RNG> std::ops::DerefMut for Garbler<C3, RNG, OT> {
+impl<C3, RNG> std::ops::DerefMut for Garbler<C3, RNG> {
     fn deref_mut(&mut self) -> &mut Gb<C3, RNG> {
         &mut self.garbler
     }
@@ -31,13 +29,11 @@ impl<C3, OT, RNG> std::ops::DerefMut for Garbler<C3, RNG, OT> {
 
 impl<
         C3: AbstractChannel,
-        OT: OtSender<Msg = Block>,
         RNG: CryptoRng + Rng + SeedableRng<Seed = Block>,
-    > Garbler<C3, RNG, OT>
+    > Garbler<C3, RNG>
 {
     /// Make a new `Garbler`.
     pub fn new<C12: AbstractChannel>(is_p2: bool, mut channel_p1_p2: C12, mut channel_p3: C3, mut rng: RNG) -> Result<Self, TwopacError> {
-        let ot = OT::init(&mut channel_p3, &mut rng)?;
         let seed: Block;
 
         if is_p2 {
@@ -51,12 +47,10 @@ impl<
 
         Ok(Garbler {
             garbler,
-            ot,
             is_p2,
         })
     }
 
-    // TODO: get_channel
     pub fn get_channel(&mut self) -> &mut C3 {
         self.garbler.get_channel()
     }
@@ -100,8 +94,7 @@ impl<
 impl<
         C3: AbstractChannel,
         RNG: CryptoRng + Rng + SeedableRng<Seed = Block>,
-        OT: OtSender<Msg = Block>,
-    > FancyInput for Garbler<C3, RNG, OT>
+    > FancyInput for Garbler<C3, RNG>
 {
     type Item = Wire;
     type Error = TwopacError;
@@ -144,7 +137,7 @@ impl<
     }
 }
 
-impl<C3: AbstractChannel, RNG: CryptoRng + Rng, OT> Fancy for Garbler<C3, RNG, OT> {
+impl<C3: AbstractChannel, RNG: CryptoRng + Rng> Fancy for Garbler<C3, RNG> {
     type Item = Wire;
     type Error = TwopacError;
 
@@ -177,11 +170,11 @@ impl<C3: AbstractChannel, RNG: CryptoRng + Rng, OT> Fancy for Garbler<C3, RNG, O
     }
 }
 
-impl<C3: AbstractChannel, RNG: CryptoRng + Rng, OT> FancyReveal for Garbler<C3, RNG, OT> {
+impl<C3: AbstractChannel, RNG: CryptoRng + Rng, > FancyReveal for Garbler<C3, RNG> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
         self.garbler.reveal(x).map_err(Self::Error::from)
     }
 }
 
-impl<C3, RNG, OT> SemiHonest for Garbler<C3, RNG, OT> {}
-impl<C3, RNG, OT> Malicious for Garbler<C3, RNG, OT> {}
+impl<C3, RNG> SemiHonest for Garbler<C3, RNG> {}
+impl<C3, RNG> Malicious for Garbler<C3, RNG> {}

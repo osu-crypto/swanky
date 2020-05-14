@@ -7,7 +7,6 @@
 use std::io;
 use std::io::{Read, Write};
 use crate::{errors::TwopacError, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, Wire};
-use ocelot::ot::Receiver as OtReceiver;
 use rand::{CryptoRng, Rng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
 
@@ -18,20 +17,18 @@ struct VerifyEqualChannel<C1, C2> {
 }
 
 /// Malicious evaluator.
-pub struct Evaluator<C1, C2, RNG, OT> {
+pub struct Evaluator<C1, C2, RNG> {
     evaluator: Ev<VerifyEqualChannel<C1, C2>>,
-    ot: OT,
     rng: RNG,
 }
 
-impl<C1, C2, RNG, OT> Evaluator<C1, C2, RNG, OT> {}
+impl<C1, C2, RNG> Evaluator<C1, C2, RNG> {}
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>>
-    Evaluator<C1, C2, RNG, OT>
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng>
+    Evaluator<C1, C2, RNG>
 {
     /// Make a new `Evaluator`.
     pub fn new(mut channel_p1: C1, channel_p2: C2, mut rng: RNG) -> Result<Self, TwopacError> {
-        let ot = OT::init(&mut channel_p1, &mut rng)?;
         let channel = VerifyEqualChannel {
             channel_p1,
             channel_p2,
@@ -39,7 +36,6 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
         let evaluator = Ev::new(channel);
         Ok(Self {
             evaluator,
-            ot,
             rng,
         })
     }
@@ -52,12 +48,6 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
         &mut self.evaluator.get_channel().channel_p2
     }
 
-
-    fn run_ot(&mut self, inputs: &[bool]) -> Result<Vec<Block>, TwopacError> {
-        self.ot
-            .receive(self.evaluator.get_channel(), &inputs, &mut self.rng)
-            .map_err(TwopacError::from)
-    }
 
     fn secret_share(&mut self, input: u16, modulus: u16) -> Result<(), TwopacError> {
         let p1: u16 =  self.rng.gen();
@@ -72,21 +62,21 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>> FancyInput
-    for Evaluator<C1, C2, RNG, OT>
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
+    for Evaluator<C1, C2, RNG>
 {
     type Item = Wire;
     type Error = TwopacError;
 
     /// Receive a garbler input wire.
     fn receive(&mut self, modulus: u16) -> Result<Wire, TwopacError> {
-        let block = self.evaluator.get_channel().channel_p1.read_block()?; // TODO: Maybe its from p2.
+        let block = self.get_channel_p1().read_block()?; // TODO: Maybe its from p2.
         let label = Wire::from_block(block, modulus);
         let color = label.color();
 
-        for _ in 0..color { self.evaluator.get_channel().channel_p2.read_block()?; }
-        let commitment = self.evaluator.get_channel().channel_p2.read_block()?;
-        for _ in (color+1)..modulus { self.evaluator.get_channel().channel_p2.read_block()?; }
+        for _ in 0..color { self.get_channel_p2().read_block()?; }
+        let commitment = self.get_channel_p2().read_block()?;
+        for _ in (color+1)..modulus { self.get_channel_p2().read_block()?; }
 
         if label.hash(tweak2(color as u64, 2)) != commitment {
             // TODO: Better errors
@@ -101,7 +91,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
         moduli.iter().map(|q| self.receive(*q)).collect()
     }
 
-    /// Perform OT and obtain wires for the evaluator's inputs.
+    /// Obtain wires for the evaluator's inputs.
     fn encode_many(&mut self, inputs: &[u16], moduli: &[u16]) -> Result<Vec<Wire>, TwopacError> {
         for (x, q) in inputs.iter().zip(moduli.iter()) {
             self.secret_share(*x, *q)?;
@@ -127,7 +117,7 @@ fn combine(wires: &[Block], q: u16) -> Wire {
     })
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>> Fancy for Evaluator<C1, C2, RNG, OT> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Fancy for Evaluator<C1, C2, RNG> {
     type Item = Wire;
     type Error = TwopacError;
 
@@ -160,7 +150,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>> FancyReveal for Evaluator<C1, C2, RNG, OT> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyReveal for Evaluator<C1, C2, RNG> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
         self.evaluator.reveal(x).map_err(Self::Error::from)
     }
@@ -197,5 +187,5 @@ impl<C1: AbstractChannel, C2: AbstractChannel> Write for VerifyEqualChannel<C1, 
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG, OT> SemiHonest for Evaluator<C1, C2, RNG, OT> {}
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG, OT> Malicious for Evaluator<C1, C2, RNG, OT> {}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG> SemiHonest for Evaluator<C1, C2, RNG> {}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG> Malicious for Evaluator<C1, C2, RNG> {}

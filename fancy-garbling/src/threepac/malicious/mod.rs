@@ -4,7 +4,7 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-//! Implementation of semi-honest two-party computation.
+//! Implementation of malicious three-party computation.
 
 mod evaluator;
 mod garbler;
@@ -52,35 +52,35 @@ mod tests {
                         let mut gb =
                             Garbler::<UnixChannel, AesRng>::new(PartyId::Garbler1, &mut p1top2, p1top3, rng)
                                 .unwrap();
-                        let x = gb.encode(a, 3).unwrap();
+                        let g1 = gb.encode(a, 3).unwrap();
                         let g2 = gb.receive(PartyId::Garbler2, 3).unwrap();
                         let ys = gb.receive(PartyId::Evaluator, 3).unwrap();
-                        let gurbler_sum = addition(&mut gb, &x, &g2).unwrap().unwrap();
-                        let gurbler_wire = gb.encode(gurbler_sum, 3).unwrap();
-                        addition(&mut gb, &gurbler_wire, &ys).unwrap();
+
+                        let garbler_wire = gb.add(&g1, &g2).unwrap();
+                        addition(&mut gb, &garbler_wire, &ys).unwrap();
                     });
                     std::thread::spawn(move || {
                         let rng = AesRng::new();
                         let mut gb =
                             Garbler::<UnixChannel, AesRng>::new(PartyId::Garbler2, &mut p2top1, p2top3, rng)
                                 .unwrap();
-                        let x = gb.encode(b, 3).unwrap();
                         let g1 = gb.receive(PartyId::Garbler1, 3).unwrap();
+                        let g2 = gb.encode(b, 3).unwrap();
                         let ys = gb.receive(PartyId::Evaluator, 3).unwrap();
-                        let gurbler_sum = addition(&mut gb, &x, &g1).unwrap().unwrap();
-                        let gurbler_wire = gb.encode(gurbler_sum, 3).unwrap();
-                        addition(&mut gb, &gurbler_wire, &ys).unwrap();
+
+                        let garbler_wire = gb.add(&g1, &g2).unwrap();
+                        addition(&mut gb, &garbler_wire, &ys).unwrap();
                     });
                     let rng = AesRng::new();
                     let mut gb =
                         Evaluator::<UnixChannel, UnixChannel, AesRng>::new(p3top1, p3top2, rng)
                             .unwrap();
-                    let x = gb.encode(c, 3).unwrap();
                     let g1 = gb.receive(PartyId::Garbler1, 3).unwrap();
                     let g2 = gb.receive(PartyId::Garbler2, 3).unwrap();
-                    let gurbler_sum = addition(&mut gb, &g1, &g2).unwrap().unwrap();
-                    let gurbler_wire = gb.encode(gurbler_sum, 3).unwrap();
-                    let output = addition(&mut gb, &gurbler_wire, &x).unwrap().unwrap();
+                    let ys = gb.encode(c, 3).unwrap();
+
+                    let garbler_wire = gb.add(&g1, &g2).unwrap();
+                    let output = addition(&mut gb, &garbler_wire, &ys).unwrap().unwrap();
                     assert_eq!((a + b + c) % 3, output);
                 }
             }

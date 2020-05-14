@@ -114,7 +114,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
         self.evaluator.get_channel().flush()?;
 
         let wires_p1 = self.receive_many(PartyId::Garbler1, moduli)?;
-        let wires_p2 = self.receive_many(PartyId::Garbler1, moduli)?;
+        let wires_p2 = self.receive_many(PartyId::Garbler2, moduli)?;
         wires_p1
             .iter()
             .zip(wires_p2.iter())

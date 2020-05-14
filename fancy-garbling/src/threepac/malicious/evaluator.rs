@@ -81,9 +81,17 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
         let label = Wire::from_block(block, modulus);
         let color = label.color();
 
-        for _ in 0..color { self.get_channel_p2().read_block()?; }
-        let commitment = self.get_channel_p2().read_block()?;
-        for _ in (color+1)..modulus { self.get_channel_p2().read_block()?; }
+        let mut read_commitment = || {
+            if from == PartyId::Garbler1 {
+                self.get_channel_p2().read_block()
+            } else {
+                self.get_channel_p1().read_block()
+            }
+        };
+
+        for _ in 0..color { read_commitment()?; }
+        let commitment = read_commitment()?;
+        for _ in (color+1)..modulus { read_commitment()?; }
 
         if label.hash(tweak2(color as u64, 2)) != commitment {
             // TODO: Better errors

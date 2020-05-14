@@ -38,10 +38,16 @@ impl<
     /// Make a new `Garbler`.
     pub fn new<C12: AbstractChannel>(is_p2: bool, mut channel_p1_p2: C12, mut channel_p3: C3, mut rng: RNG) -> Result<Self, TwopacError> {
         let ot = OT::init(&mut channel_p3, &mut rng)?;
+        let seed: Block;
 
-        let seed: Block = rng.gen();
+        if is_p2 {
+            seed = channel_p1_p2.read_block()?;
+        } else {
+            seed = rng.gen();
+            channel_p1_p2.write_block(&seed)?;
+        }
+
         let garbler = Gb::new(channel_p3, RNG::from_seed(seed));
-        channel_p1_p2.write_block(&seed)?;
 
         Ok(Garbler {
             garbler,
@@ -51,9 +57,9 @@ impl<
     }
 
     // TODO: get_channel
-    // pub fn get_channel(&mut self) -> &mut C3 {
-    //     &mut self.garbler.get_channel()
-    // }
+    pub fn get_channel(&mut self) -> &mut C3 {
+        self.garbler.get_channel()
+    }
 
     /// Create a wire label when the other garbler has the input.
     pub fn declare_input(&mut self, modulus: u16) -> Result<Wire, TwopacError> {

@@ -10,32 +10,31 @@ use rand::{CryptoRng, Rng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
 
 /// Malicious evaluator.
-pub struct Evaluator<C, RNG, OT> {
-    evaluator: Ev<C>,
+pub struct Evaluator<C1, C2, RNG, OT> {
+    channel_p2: C2,
+    evaluator: Ev<C1>,
     ot: OT,
     rng: RNG,
 }
 
-impl<C, RNG, OT> Evaluator<C, RNG, OT> {}
+impl<C1, C2, RNG, OT> Evaluator<C1, C2, RNG, OT> {}
 
-impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>>
-    Evaluator<C, RNG, OT>
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>>
+    Evaluator<C1, C2, RNG, OT>
 {
     /// Make a new `Evaluator`.
-    pub fn new(mut channel: C, mut rng: RNG) -> Result<Self, TwopacError> {
-        let ot = OT::init(&mut channel, &mut rng)?;
-        let evaluator = Ev::new(channel);
+    pub fn new(mut channel_p1: C1, mut channel_p2: C2, mut rng: RNG) -> Result<Self, TwopacError> {
+        let ot = OT::init(&mut channel_p1, &mut rng)?;
+        let evaluator = Ev::new(channel_p1);
         Ok(Self {
+            channel_p2,
             evaluator,
             ot,
             rng,
         })
     }
 
-    /// Get a reference to the internal channel.
-    pub fn get_channel(&mut self) -> &mut C {
-        self.evaluator.get_channel()
-    }
+    // TODO: get_channel
 
     fn run_ot(&mut self, inputs: &[bool]) -> Result<Vec<Block>, TwopacError> {
         self.ot
@@ -44,8 +43,8 @@ impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>>
     }
 }
 
-impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>> FancyInput
-    for Evaluator<C, RNG, OT>
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>> FancyInput
+    for Evaluator<C1, C2, RNG, OT>
 {
     type Item = Wire;
     type Error = TwopacError;
@@ -94,7 +93,7 @@ fn combine(wires: &[Block], q: u16) -> Wire {
     })
 }
 
-impl<C: AbstractChannel, RNG, OT> Fancy for Evaluator<C, RNG, OT> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG, OT> Fancy for Evaluator<C1, C2, RNG, OT> {
     type Item = Wire;
     type Error = TwopacError;
 
@@ -127,11 +126,11 @@ impl<C: AbstractChannel, RNG, OT> Fancy for Evaluator<C, RNG, OT> {
     }
 }
 
-impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT> FancyReveal for Evaluator<C, RNG, OT> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT> FancyReveal for Evaluator<C1, C2, RNG, OT> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
         self.evaluator.reveal(x).map_err(Self::Error::from)
     }
 }
 
-impl<C: AbstractChannel, RNG, OT> SemiHonest for Evaluator<C, RNG, OT> {}
-impl<C: AbstractChannel, RNG, OT> Malicious for Evaluator<C, RNG, OT> {}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG, OT> SemiHonest for Evaluator<C1, C2, RNG, OT> {}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG, OT> Malicious for Evaluator<C1, C2, RNG, OT> {}

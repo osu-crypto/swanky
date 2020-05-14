@@ -16,6 +16,8 @@ pub trait FancyInput {
     /// The type of error that this Fancy object emits.
     type Error: From<FancyError>;
 
+    type PartyId: Clone;
+
     ////////////////////////////////////////////////////////////////////////////////
     // required methods
 
@@ -30,7 +32,7 @@ pub trait FancyInput {
     ) -> Result<Vec<Self::Item>, Self::Error>;
 
     /// Receive many values where the input is not known.
-    fn receive_many(&mut self, moduli: &[u16]) -> Result<Vec<Self::Item>, Self::Error>;
+    fn receive_many(&mut self, from: Self::PartyId, moduli: &[u16]) -> Result<Vec<Self::Item>, Self::Error>;
 
     ////////////////////////////////////////////////////////////////////////////////
     // optional methods
@@ -45,8 +47,8 @@ pub trait FancyInput {
     }
 
     /// Receive a single value.
-    fn receive(&mut self, modulus: u16) -> Result<Self::Item, Self::Error> {
-        let mut xs = self.receive_many(&[modulus])?;
+    fn receive(&mut self, from: Self::PartyId, modulus: u16) -> Result<Self::Item, Self::Error> {
+        let mut xs = self.receive_many(from, &[modulus])?;
         Ok(xs.remove(0))
     }
 
@@ -60,8 +62,8 @@ pub trait FancyInput {
     }
 
     /// Receive a bundle.
-    fn receive_bundle(&mut self, moduli: &[u16]) -> Result<Bundle<Self::Item>, Self::Error> {
-        self.receive_many(moduli).map(Bundle::new)
+    fn receive_bundle(&mut self, from: Self::PartyId, moduli: &[u16]) -> Result<Bundle<Self::Item>, Self::Error> {
+        self.receive_many(from, moduli).map(Bundle::new)
     }
 
     /// Encode many input bundles.
@@ -91,10 +93,11 @@ pub trait FancyInput {
     /// Receive many input bundles.
     fn receive_many_bundles(
         &mut self,
+        from: Self::PartyId,
         moduli: &[Vec<u16>],
     ) -> Result<Vec<Bundle<Self::Item>>, Self::Error> {
         let qs = moduli.iter().flatten().cloned().collect_vec();
-        let mut wires = self.receive_many(&qs)?;
+        let mut wires = self.receive_many(from, &qs)?;
         let buns = moduli
             .iter()
             .map(|qs| {
@@ -117,9 +120,9 @@ pub trait FancyInput {
     }
 
     /// Receive an CRT input bundle.
-    fn crt_receive(&mut self, modulus: u128) -> Result<CrtBundle<Self::Item>, Self::Error> {
+    fn crt_receive(&mut self, from: Self::PartyId, modulus: u128) -> Result<CrtBundle<Self::Item>, Self::Error> {
         let qs = util::factor(modulus);
-        self.receive_bundle(&qs).map(CrtBundle::from)
+        self.receive_bundle(from, &qs).map(CrtBundle::from)
     }
 
     /// Encode many CRT input bundles.
@@ -151,13 +154,14 @@ pub trait FancyInput {
     /// Receive many CRT input bundles.
     fn crt_receive_many(
         &mut self,
+        from: Self::PartyId,
         n: usize,
         modulus: u128,
     ) -> Result<Vec<CrtBundle<Self::Item>>, Self::Error> {
         let mods = util::factor(modulus);
         let nmods = mods.len();
         let qs = itertools::repeat_n(mods, n).flatten().collect_vec();
-        let mut wires = self.receive_many(&qs)?;
+        let mut wires = self.receive_many(from, &qs)?;
         let buns = (0..n)
             .map(|_| {
                 let ws = wires.drain(0..nmods).collect_vec();
@@ -179,8 +183,8 @@ pub trait FancyInput {
     }
 
     /// Receive an binary input bundle.
-    fn bin_receive(&mut self, nbits: usize) -> Result<BinaryBundle<Self::Item>, Self::Error> {
-        self.receive_bundle(&vec![2; nbits]).map(BinaryBundle::from)
+    fn bin_receive(&mut self, from: Self::PartyId, nbits: usize) -> Result<BinaryBundle<Self::Item>, Self::Error> {
+        self.receive_bundle(from, &vec![2; nbits]).map(BinaryBundle::from)
     }
 
     /// Encode many binary input bundles.
@@ -207,10 +211,11 @@ pub trait FancyInput {
     /// Receive many binary input bundles.
     fn bin_receive_many(
         &mut self,
+        from: Self::PartyId,
         ninputs: usize,
         nbits: usize,
     ) -> Result<Vec<BinaryBundle<Self::Item>>, Self::Error> {
-        let mut wires = self.receive_many(&vec![2; ninputs * nbits])?;
+        let mut wires = self.receive_many(from, &vec![2; ninputs * nbits])?;
         let buns = (0..ninputs)
             .map(|_| {
                 let ws = wires.drain(0..nbits).collect_vec();

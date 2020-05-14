@@ -262,12 +262,12 @@ impl Circuit {
         let gb = self
             .garbler_input_refs
             .iter()
-            .map(|r| informer.receive(r.modulus()))
+            .map(|r| informer.receive((), r.modulus()))
             .collect::<Result<Vec<DummyVal>, DummyError>>()?;
         let ev = self
             .evaluator_input_refs
             .iter()
-            .map(|r| informer.receive(r.modulus()))
+            .map(|r| informer.receive((), r.modulus()))
             .collect::<Result<Vec<DummyVal>, DummyError>>()?;
 
         let _outputs = self.eval(&mut informer, &gb, &ev)?;

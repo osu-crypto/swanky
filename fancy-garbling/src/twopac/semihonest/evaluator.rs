@@ -4,7 +4,7 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{errors::TwopacError, Evaluator as Ev, Fancy, FancyInput, FancyReveal, Wire};
+use crate::{errors::TwopacError, Evaluator as Ev, Fancy, FancyInput, FancyReveal, twopac::PartyId, Wire};
 use ocelot::ot::Receiver as OtReceiver;
 use rand::{CryptoRng, Rng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest};
@@ -49,16 +49,19 @@ impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block> + Sem
 {
     type Item = Wire;
     type Error = TwopacError;
+    type PartyId = PartyId;
 
     /// Receive a garbler input wire.
-    fn receive(&mut self, modulus: u16) -> Result<Wire, TwopacError> {
+    fn receive(&mut self, from: PartyId, modulus: u16) -> Result<Wire, TwopacError> {
+        assert!(from == PartyId::Garbler);
         let w = self.evaluator.read_wire(modulus)?;
         Ok(w)
     }
 
     /// Receive garbler input wires.
-    fn receive_many(&mut self, moduli: &[u16]) -> Result<Vec<Wire>, TwopacError> {
-        moduli.iter().map(|q| self.receive(*q)).collect()
+    fn receive_many(&mut self, from: PartyId, moduli: &[u16]) -> Result<Vec<Wire>, TwopacError> {
+        assert!(from == PartyId::Garbler);
+        moduli.iter().map(|q| self.receive(from, *q)).collect()
     }
 
     /// Perform OT and obtain wires for the evaluator's inputs.

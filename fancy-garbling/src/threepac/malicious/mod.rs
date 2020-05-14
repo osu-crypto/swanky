@@ -9,6 +9,13 @@
 mod evaluator;
 mod garbler;
 
+#[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
+pub enum PartyId {
+    Garbler1,
+    Garbler2,
+    Evaluator,
+}
+
 pub use evaluator::Evaluator;
 pub use garbler::Garbler;
 

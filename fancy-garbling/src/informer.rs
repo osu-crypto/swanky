@@ -29,8 +29,7 @@ pub struct InformerStats {
     ncmuls: usize,
     nmuls: usize,
     nprojs: usize,
-    nciphertexts: usize,
-    moduli: HashMap<u16, usize>,
+    nciphertexts: usize, moduli: HashMap<u16, usize>,
 }
 
 impl InformerStats {
@@ -224,8 +223,9 @@ impl<F: Fancy + FancyInput<Item = <F as Fancy>::Item, Error = <F as Fancy>::Erro
 {
     type Item = <F as Fancy>::Item;
     type Error = <F as Fancy>::Error;
+    type PartyId = <F as FancyInput>::PartyId;
 
-    fn receive_many(&mut self, moduli: &[u16]) -> Result<Vec<Self::Item>, Self::Error> {
+    fn receive_many(&mut self, _from: Self::PartyId, moduli: &[u16]) -> Result<Vec<Self::Item>, Self::Error> {
         self.stats
             .garbler_input_moduli
             .extend(moduli.iter().cloned());

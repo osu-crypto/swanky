@@ -52,6 +52,7 @@ impl Dummy {
 impl FancyInput for Dummy {
     type Item = DummyVal;
     type Error = DummyError;
+    type PartyId = ();
 
     /// Encode a single dummy value.
     fn encode(&mut self, value: u16, modulus: u16) -> Result<DummyVal, DummyError> {
@@ -70,7 +71,7 @@ impl FancyInput for Dummy {
             .collect())
     }
 
-    fn receive_many(&mut self, _moduli: &[u16]) -> Result<Vec<DummyVal>, DummyError> {
+    fn receive_many(&mut self, _from: Self::PartyId, _moduli: &[u16]) -> Result<Vec<DummyVal>, DummyError> {
         // Receive is undefined for Dummy which is a single party "protocol"
         Err(DummyError::EncodingError)
     }

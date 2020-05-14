@@ -6,9 +6,9 @@
 
 use std::io;
 use std::io::{Read, Write};
-use crate::{errors::TwopacError, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, Wire};
+use crate::{errors::TwopacError, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, threepac::malicious::PartyId, Wire};
 use rand::{CryptoRng, Rng};
-use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
+use scuttlebutt::{AbstractChannel, SemiHonest, Malicious};
 
 /// A communication channel that verifies that both parties are providing the same data.
 struct VerifyEqualChannel<C1, C2> {
@@ -28,7 +28,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng>
     Evaluator<C1, C2, RNG>
 {
     /// Make a new `Evaluator`.
-    pub fn new(mut channel_p1: C1, channel_p2: C2, mut rng: RNG) -> Result<Self, TwopacError> {
+    pub fn new(channel_p1: C1, channel_p2: C2, rng: RNG) -> Result<Self, TwopacError> {
         let channel = VerifyEqualChannel {
             channel_p1,
             channel_p2,
@@ -67,10 +67,17 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
 {
     type Item = Wire;
     type Error = TwopacError;
+    type PartyId = PartyId;
 
     /// Receive a garbler input wire.
-    fn receive(&mut self, modulus: u16) -> Result<Wire, TwopacError> {
-        let block = self.get_channel_p1().read_block()?; // TODO: Maybe its from p2.
+    fn receive(&mut self, from: PartyId, modulus: u16) -> Result<Wire, TwopacError> {
+        assert!(from != PartyId::Evaluator);
+
+        let block = if from == PartyId::Garbler1 {
+            self.get_channel_p1().read_block()
+        } else {
+            self.get_channel_p2().read_block()
+        }?;
         let label = Wire::from_block(block, modulus);
         let color = label.color();
 
@@ -87,8 +94,8 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
     }
 
     /// Receive garbler input wires.
-    fn receive_many(&mut self, moduli: &[u16]) -> Result<Vec<Wire>, TwopacError> {
-        moduli.iter().map(|q| self.receive(*q)).collect()
+    fn receive_many(&mut self, from: PartyId, moduli: &[u16]) -> Result<Vec<Wire>, TwopacError> {
+        moduli.iter().map(|q| self.receive(from, *q)).collect()
     }
 
     /// Obtain wires for the evaluator's inputs.
@@ -98,8 +105,8 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
         }
         self.evaluator.get_channel().flush()?;
 
-        let wires_p1 = self.receive_many(moduli)?; // from P1
-        let wires_p2 = self.receive_many(moduli)?; // TODO: from P2
+        let wires_p1 = self.receive_many(PartyId::Garbler1, moduli)?;
+        let wires_p2 = self.receive_many(PartyId::Garbler1, moduli)?;
         wires_p1
             .iter()
             .zip(wires_p2.iter())
@@ -110,19 +117,12 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
     }
 }
 
-fn combine(wires: &[Block], q: u16) -> Wire {
-    wires.iter().enumerate().fold(Wire::zero(q), |acc, (i, w)| {
-        let w = Wire::from_block(*w, q);
-        acc.plus(&w.cmul(1 << i))
-    })
-}
-
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Fancy for Evaluator<C1, C2, RNG> {
     type Item = Wire;
     type Error = TwopacError;
 
     fn constant(&mut self, _: u16, q: u16) -> Result<Self::Item, Self::Error> {
-        self.receive(q)
+        Ok(Wire::zero(q))
     }
 
     fn add(&mut self, x: &Wire, y: &Wire) -> Result<Self::Item, Self::Error> {

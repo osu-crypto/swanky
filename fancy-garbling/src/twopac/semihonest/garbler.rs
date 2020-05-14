@@ -4,7 +4,7 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{errors::TwopacError, Fancy, FancyInput, FancyReveal, Garbler as Gb, Wire};
+use crate::{errors::TwopacError, Fancy, FancyInput, FancyReveal, Garbler as Gb, twopac::PartyId, Wire};
 use ocelot::ot::Sender as OtSender;
 use rand::{CryptoRng, Rng, SeedableRng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest};
@@ -74,6 +74,7 @@ impl<
 {
     type Item = Wire;
     type Error = TwopacError;
+    type PartyId = PartyId;
 
     fn encode(&mut self, val: u16, modulus: u16) -> Result<Wire, TwopacError> {
         let (mine, theirs) = self.garbler.encode_wire(val, modulus);
@@ -96,7 +97,8 @@ impl<
         ws
     }
 
-    fn receive_many(&mut self, qs: &[u16]) -> Result<Vec<Wire>, TwopacError> {
+    fn receive_many(&mut self, from: PartyId,qs: &[u16]) -> Result<Vec<Wire>, TwopacError> {
+        assert!(from == PartyId::Evaluator);
         let n = qs.len();
         let lens = qs.iter().map(|q| f32::from(*q).log(2.0).ceil() as usize);
         let mut wires = Vec::with_capacity(n);

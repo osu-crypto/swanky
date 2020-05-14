@@ -7,49 +7,51 @@
 use crate::{errors::TwopacError, Fancy, FancyInput, FancyReveal, Garbler as Gb, Wire};
 use ocelot::ot::Sender as OtSender;
 use rand::{CryptoRng, Rng, SeedableRng};
-use scuttlebutt::{AbstractChannel, Block, SemiHonest};
+use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
 
 /// Semi-honest garbler.
-pub struct Garbler<C, RNG, OT> {
-    garbler: Gb<C, RNG>,
+pub struct Garbler<C12, C3, RNG, OT> {
+    channel_p1_p2: C12,
+    garbler: Gb<C3, RNG>,
     ot: OT,
     rng: RNG,
+    is_p2: bool,
 }
 
-impl<C, OT, RNG> std::ops::Deref for Garbler<C, RNG, OT> {
-    type Target = Gb<C, RNG>;
+impl<C12, C3, OT, RNG> std::ops::Deref for Garbler<C12, C3, RNG, OT> {
+    type Target = Gb<C3, RNG>;
     fn deref(&self) -> &Self::Target {
         &self.garbler
     }
 }
 
-impl<C, OT, RNG> std::ops::DerefMut for Garbler<C, RNG, OT> {
-    fn deref_mut(&mut self) -> &mut Gb<C, RNG> {
+impl<C12, C3, OT, RNG> std::ops::DerefMut for Garbler<C12, C3, RNG, OT> {
+    fn deref_mut(&mut self) -> &mut Gb<C3, RNG> {
         &mut self.garbler
     }
 }
 
 impl<
-        C: AbstractChannel,
+        C12: AbstractChannel,
+        C3: AbstractChannel,
         RNG: CryptoRng + Rng + SeedableRng<Seed = Block>,
-        OT: OtSender<Msg = Block> + SemiHonest,
-    > Garbler<C, RNG, OT>
+        OT: OtSender<Msg = Block>,
+    > Garbler<C12, C3, RNG, OT>
 {
     /// Make a new `Garbler`.
-    pub fn new(mut channel: C, mut rng: RNG) -> Result<Self, TwopacError> {
-        let ot = OT::init(&mut channel, &mut rng)?;
-        let garbler = Gb::new(channel, RNG::from_seed(rng.gen()));
+    pub fn new(is_p2: bool, mut channel_p1_p2: C12, mut channel_p3: C3, mut rng: RNG) -> Result<Self, TwopacError> {
+        let ot = OT::init(&mut channel_p3, &mut rng)?;
+        let garbler = Gb::new(channel_p3, RNG::from_seed(rng.gen()));
         Ok(Garbler {
+            channel_p1_p2,
             garbler,
             ot,
             rng,
+            is_p2,
         })
     }
 
-    /// Get a reference to the internal channel.
-    pub fn get_channel(&mut self) -> &mut C {
-        self.garbler.get_channel()
-    }
+    // TODO: get_channel
 
     fn _evaluator_input(&mut self, delta: &Wire, q: u16) -> (Wire, Vec<(Block, Block)>) {
         let len = f32::from(q).log(2.0).ceil() as u16;
@@ -67,10 +69,11 @@ impl<
 }
 
 impl<
-        C: AbstractChannel,
+        C12: AbstractChannel,
+        C3: AbstractChannel,
         RNG: CryptoRng + Rng + SeedableRng<Seed = Block>,
-        OT: OtSender<Msg = Block> + SemiHonest,
-    > FancyInput for Garbler<C, RNG, OT>
+        OT: OtSender<Msg = Block>,
+    > FancyInput for Garbler<C12, C3, RNG, OT>
 {
     type Item = Wire;
     type Error = TwopacError;
@@ -115,7 +118,7 @@ impl<
     }
 }
 
-impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT> Fancy for Garbler<C, RNG, OT> {
+impl<C12: AbstractChannel, C3: AbstractChannel, RNG: CryptoRng + Rng, OT> Fancy for Garbler<C12, C3, RNG, OT> {
     type Item = Wire;
     type Error = TwopacError;
 
@@ -148,10 +151,11 @@ impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT> Fancy for Garbler<C, RNG, OT>
     }
 }
 
-impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT> FancyReveal for Garbler<C, RNG, OT> {
+impl<C12: AbstractChannel, C3: AbstractChannel, RNG: CryptoRng + Rng, OT> FancyReveal for Garbler<C12, C3, RNG, OT> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
         self.garbler.reveal(x).map_err(Self::Error::from)
     }
 }
 
-impl<C, RNG, OT> SemiHonest for Garbler<C, RNG, OT> {}
+impl<C12, C3, RNG, OT> SemiHonest for Garbler<C12, C3, RNG, OT> {}
+impl<C12, C3, RNG, OT> Malicious for Garbler<C12, C3, RNG, OT> {}

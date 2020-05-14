@@ -7,7 +7,7 @@
 use crate::{errors::TwopacError, Evaluator as Ev, Fancy, FancyInput, FancyReveal, Wire};
 use ocelot::ot::Receiver as OtReceiver;
 use rand::{CryptoRng, Rng};
-use scuttlebutt::{AbstractChannel, Block, Malicious};
+use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
 
 /// Malicious evaluator.
 pub struct Evaluator<C, RNG, OT> {
@@ -18,7 +18,7 @@ pub struct Evaluator<C, RNG, OT> {
 
 impl<C, RNG, OT> Evaluator<C, RNG, OT> {}
 
-impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block> + SemiHonest>
+impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>>
     Evaluator<C, RNG, OT>
 {
     /// Make a new `Evaluator`.
@@ -44,7 +44,7 @@ impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block> + Sem
     }
 }
 
-impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block> + SemiHonest> FancyInput
+impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>> FancyInput
     for Evaluator<C, RNG, OT>
 {
     type Item = Wire;
@@ -134,3 +134,4 @@ impl<C: AbstractChannel, RNG: CryptoRng + Rng, OT> FancyReveal for Evaluator<C, 
 }
 
 impl<C: AbstractChannel, RNG, OT> SemiHonest for Evaluator<C, RNG, OT> {}
+impl<C: AbstractChannel, RNG, OT> Malicious for Evaluator<C, RNG, OT> {}

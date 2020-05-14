@@ -30,6 +30,7 @@ mod garble;
 pub mod informer;
 mod parser;
 pub mod twopac;
+pub mod threepac;
 pub mod util;
 mod wire;
 

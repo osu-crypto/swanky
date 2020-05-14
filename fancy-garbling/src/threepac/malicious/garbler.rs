@@ -4,7 +4,7 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{errors::TwopacError, Fancy, FancyInput, FancyReveal, Garbler as Gb, Wire};
+use crate::{errors::TwopacError, util::tweak2, Fancy, FancyInput, FancyReveal, Garbler as Gb, Wire};
 use ocelot::ot::Sender as OtSender;
 use rand::{CryptoRng, Rng, SeedableRng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
@@ -53,6 +53,26 @@ impl<
 
     // TODO: get_channel
 
+    /// Create a wire label when the other garbler has the input.
+    pub fn declare_input(&mut self, modulus: u16) -> Result<Wire, TwopacError> {
+        let zero = self.declare_input_no_flush(modulus)?;
+        self.garbler.get_channel().flush()?;
+        Ok(zero)
+    }
+
+    fn declare_input_no_flush(&mut self, modulus: u16) -> Result<Wire, TwopacError> {
+        let zero = self.garbler.create_wire(modulus);
+        let delta = self.delta(modulus);
+
+        // Commit to all wire labels. Order by color to avoid leaking which label has which value.
+        let mut label = zero.minus(&delta.cmul(zero.color()));
+        for i in 0..modulus {
+            self.garbler.get_channel().write_block(&label.hash(tweak2(i as u64, 2)))?;
+            label = label.plus_mov(&delta);
+        }
+        Ok(zero)
+    }
+
     fn _evaluator_input(&mut self, delta: &Wire, q: u16) -> (Wire, Vec<(Block, Block)>) {
         let len = f32::from(q).log(2.0).ceil() as u16;
         let mut wire = Wire::zero(q);
@@ -78,13 +98,6 @@ impl<
     type Item = Wire;
     type Error = TwopacError;
 
-    fn encode(&mut self, val: u16, modulus: u16) -> Result<Wire, TwopacError> {
-        let (mine, theirs) = self.garbler.encode_wire(val, modulus);
-        self.garbler.send_wire(&theirs)?;
-        self.get_channel().flush()?;
-        Ok(mine)
-    }
-
     fn encode_many(&mut self, vals: &[u16], moduli: &[u16]) -> Result<Vec<Wire>, TwopacError> {
         let ws = vals
             .iter()
@@ -95,7 +108,7 @@ impl<
                 Ok(mine)
             })
             .collect();
-        self.get_channel().flush()?;
+        self.garbler.get_channel().flush()?;
         ws
     }
 

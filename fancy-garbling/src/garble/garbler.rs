@@ -77,9 +77,14 @@ impl<C: AbstractChannel, RNG: CryptoRng + RngCore> Garbler<C, RNG> {
         Ok(())
     }
 
+    /// Create a wire, producing the zero wire.
+    pub fn create_wire(&mut self, modulus: u16) -> Wire {
+        Wire::rand(&mut self.rng, modulus)
+    }
+
     /// Encode a wire, producing the zero wire as well as the encoded value.
     pub fn encode_wire(&mut self, val: u16, modulus: u16) -> (Wire, Wire) {
-        let zero = Wire::rand(&mut self.rng, modulus);
+        let zero = self.create_wire(modulus);
         let delta = self.delta(modulus);
         let enc = zero.plus(&delta.cmul(val));
         (zero, enc)

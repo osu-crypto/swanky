@@ -5,7 +5,7 @@
 // See LICENSE for licensing information.
 
 use std::io;
-use crate::{errors::TwopacError, Evaluator as Ev, Fancy, FancyInput, FancyReveal, Wire};
+use crate::{errors::TwopacError, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, Wire};
 use ocelot::ot::Receiver as OtReceiver;
 use rand::{CryptoRng, Rng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
@@ -29,7 +29,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
     Evaluator<C1, C2, RNG, OT>
 {
     /// Make a new `Evaluator`.
-    pub fn new(mut channel_p1: C1, mut channel_p2: C2, mut rng: RNG) -> Result<Self, TwopacError> {
+    pub fn new(mut channel_p1: C1, channel_p2: C2, mut rng: RNG) -> Result<Self, TwopacError> {
         let ot = OT::init(&mut channel_p1, &mut rng)?;
         let channel = VerifyEqualChannel {
             channel_p1,
@@ -82,8 +82,20 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
 
     /// Receive a garbler input wire.
     fn receive(&mut self, modulus: u16) -> Result<Wire, TwopacError> {
-        let w = self.evaluator.read_wire(modulus)?;
-        Ok(w)
+        let block = self.evaluator.get_channel().channel_p1.read_block()?; // TODO: Maybe its from p2.
+        let label = Wire::from_block(block, modulus);
+        let color = label.color();
+
+        for _ in 0..color { self.evaluator.get_channel().channel_p2.read_block()?; }
+        let commitment = self.evaluator.get_channel().channel_p2.read_block()?;
+        for _ in (color+1)..modulus { self.evaluator.get_channel().channel_p2.read_block()?; }
+
+        if label.hash(tweak2(color as u64, 2)) != commitment {
+            // TODO: Better errors
+            return Result::Err(TwopacError::IoError(io::Error::new(io::ErrorKind::ConnectionAborted, "Wire doesn't match commitment")));
+        }
+
+        Ok(label)
     }
 
     /// Receive garbler input wires.
@@ -124,12 +136,12 @@ fn combine(wires: &[Block], q: u16) -> Wire {
     })
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG, OT> Fancy for Evaluator<C1, C2, RNG, OT> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>> Fancy for Evaluator<C1, C2, RNG, OT> {
     type Item = Wire;
     type Error = TwopacError;
 
-    fn constant(&mut self, x: u16, q: u16) -> Result<Self::Item, Self::Error> {
-        self.evaluator.constant(x, q).map_err(Self::Error::from)
+    fn constant(&mut self, _: u16, q: u16) -> Result<Self::Item, Self::Error> {
+        self.receive(q)
     }
 
     fn add(&mut self, x: &Wire, y: &Wire) -> Result<Self::Item, Self::Error> {
@@ -157,7 +169,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG, OT> Fancy for Evaluator<C1, 
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT> FancyReveal for Evaluator<C1, C2, RNG, OT> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtReceiver<Msg = Block>> FancyReveal for Evaluator<C1, C2, RNG, OT> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
         self.evaluator.reveal(x).map_err(Self::Error::from)
     }
@@ -172,7 +184,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel> io::Read for VerifyEqualChannel<C
 
         // Check equality
         if bytes[..bytes_read] != p2_buf[..] {
-            return Result::Err(io::Error::new(io::ErrorKind::ConnectionAborted, "Parties 1 and 2 disagree so someone's malicious"));
+            return Result::Err(io::Error::new(io::ErrorKind::ConnectionAborted, "Parties 1 and 2 disagree"));
         }
 
         Ok(bytes_read)

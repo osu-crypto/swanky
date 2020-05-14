@@ -44,11 +44,11 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
     }
 
     // TODO: get_channel
-    pub fn get_p1_channel(&mut self) -> &mut C1 {
+    pub fn get_channel_p1(&mut self) -> &mut C1 {
         &mut self.evaluator.get_channel().channel_p1
     }
 
-    pub fn get_p2_channel(&mut self) -> &mut C2 {
+    pub fn get_channel_p2(&mut self) -> &mut C2 {
         &mut self.evaluator.get_channel().channel_p2
     }
 
@@ -60,13 +60,13 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, OT: OtRecei
     }
 
     fn secret_share(&mut self, input: u16, modulus: u16) -> Result<(), TwopacError> {
-        let channel_p1 = self.get_p1_channel();
-        let p1 =  rand::random::<u16>();
+        let p1: u16 =  self.rng.gen();
+        let channel_p1 = self.get_channel_p1();
         channel_p1.write_u16(p1)?;
         channel_p1.flush()?;
 
-        let channel_p2 = self.get_p2_channel();
         let p2 = (p1 as u32 + input as u32) % modulus as u32;
+        let channel_p2 = self.get_channel_p2();
         channel_p2.write_u16(p2 as u16)?;
         channel_p2.flush()?;
 

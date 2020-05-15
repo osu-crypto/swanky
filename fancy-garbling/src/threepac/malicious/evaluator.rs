@@ -198,5 +198,5 @@ impl<C1: AbstractChannel, C2: AbstractChannel> Write for VerifyEqualChannel<C1, 
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG> SemiHonest for Evaluator<C1, C2, RNG> {}
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG> Malicious for Evaluator<C1, C2, RNG> {}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> SemiHonest for Evaluator<C1, C2, RNG> {}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Malicious for Evaluator<C1, C2, RNG> {}

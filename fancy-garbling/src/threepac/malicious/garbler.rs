@@ -190,5 +190,5 @@ impl<C3: AbstractChannel, RNG: CryptoRng + Rng, > FancyReveal for Garbler<C3, RN
     }
 }
 
-impl<C3, RNG> SemiHonest for Garbler<C3, RNG> {}
-impl<C3, RNG> Malicious for Garbler<C3, RNG> {}
+impl<C3: AbstractChannel, RNG: CryptoRng + Rng> SemiHonest for Garbler<C3, RNG> {}
+impl<C3: AbstractChannel, RNG: CryptoRng + Rng> Malicious for Garbler<C3, RNG> {}

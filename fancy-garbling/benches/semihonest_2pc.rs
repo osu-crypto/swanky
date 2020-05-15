@@ -9,7 +9,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use fancy_garbling::{
     circuit::Circuit,
-    twopac::semihonest::{Evaluator, Garbler},
+    twopac::semihonest::{Evaluator, Garbler, PartyId},
     FancyInput,
 };
 use ocelot::ot::{AlszReceiver as OtReceiver, AlszSender as OtSender};
@@ -40,7 +40,7 @@ fn _bench_circuit(circ: &Circuit, gb_inputs: Vec<u16>, ev_inputs: Vec<u16>) {
         let channel = Channel::new(reader, writer);
         let mut gb = Garbler::<MyChannel, AesRng, OtSender>::new(channel, rng).unwrap();
         let xs = gb.encode_many(&gb_inputs, &vec![2; n_gb_inputs]).unwrap();
-        let ys = gb.receive_many(&vec![2; n_ev_inputs]).unwrap();
+        let ys = gb.receive_many(PartyId::Evaluator, &vec![2; n_ev_inputs]).unwrap();
         circ_.eval(&mut gb, &xs, &ys).unwrap();
     });
     let rng = AesRng::new();
@@ -48,7 +48,7 @@ fn _bench_circuit(circ: &Circuit, gb_inputs: Vec<u16>, ev_inputs: Vec<u16>) {
     let writer = BufWriter::new(receiver);
     let channel = Channel::new(reader, writer);
     let mut ev = Evaluator::<MyChannel, AesRng, OtReceiver>::new(channel, rng).unwrap();
-    let xs = ev.receive_many(&vec![2; n_gb_inputs]).unwrap();
+    let xs = ev.receive_many(PartyId::Garbler, &vec![2; n_gb_inputs]).unwrap();
     let ys = ev.encode_many(&ev_inputs, &vec![2; n_ev_inputs]).unwrap();
     circ.eval(&mut ev, &xs, &ys).unwrap();
     handle.join().unwrap();

@@ -32,18 +32,6 @@ fn bench_tweak2(c: &mut Criterion) {
     });
 }
 
-fn bench_output_tweak(c: &mut Criterion) {
-    c.bench_function("util::output_tweak", move |b| {
-        let rng = &mut rand::thread_rng();
-        let i = rng.gen::<usize>();
-        let k = rng.gen::<u16>();
-        b.iter(|| {
-            let block = util::output_tweak(i, k);
-            criterion::black_box(block);
-        });
-    });
-}
-
 fn base_q_add_eq(c: &mut Criterion, q: u16) {
     c.bench_function(&format!("util::as_base_q_add_eq ({})", q), move |b| {
         let rng = &mut rand::thread_rng();
@@ -135,7 +123,7 @@ fn bench_u128_from_bits(c: &mut Criterion) {
 criterion_group! {
     name = util;
     config = Criterion::default().warm_up_time(Duration::from_millis(100));
-    targets = bench_tweak, bench_tweak2, bench_output_tweak, bench_base_q_add_eq,
+    targets = bench_tweak, bench_tweak2, bench_base_q_add_eq,
               bench_as_base_q_u128, bench_from_base_q, bench_u128_to_bits,
               bench_u128_from_bits,
 }

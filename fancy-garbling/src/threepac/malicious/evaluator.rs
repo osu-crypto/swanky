@@ -4,11 +4,12 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use std::io;
-use std::io::{Read, Write};
 use crate::{errors::TwopacError, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, threepac::malicious::PartyId, Wire};
 use rand::{CryptoRng, Rng};
 use scuttlebutt::{AbstractChannel, SemiHonest, Malicious};
+use std::io;
+use std::io::{Read, Write};
+use std::slice::from_ref;
 
 /// A communication channel that verifies that both parties are providing the same data.
 struct VerifyEqualChannel<C1, C2> {
@@ -118,9 +119,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
         wires_p1
             .iter()
             .zip(wires_p2.iter())
-            .map(|(w1, w2)| {
-                self.evaluator.sub(w2, w1).map_err(Self::Error::from)
-            })
+            .map(|(w1, w2)| self.evaluator.sub(w2, w1).map_err(Self::Error::from))
             .collect()
     }
 }
@@ -160,10 +159,21 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Fancy for E
 
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyReveal for Evaluator<C1, C2, RNG> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
-        let output = self.output(x)?.expect("Evaluator always outputs Some(u16)");
-        self.evaluator.get_channel().write_block(&x.as_block())?;
+        Ok(self.reveal_many(from_ref(x))?[0])
+    }
+
+    fn reveal_many(&mut self, xs: &[Self::Item]) -> Result<Vec<u16>, Self::Error> {
+        let outputs = xs
+            .iter()
+            .map(|x| Ok(self.output(x)?.expect("Evaluator always outputs Some(u16)")))
+            .collect::<Result<Vec<u16>, Self::Error>>()?;
+
+        for x in xs.iter() {
+            self.evaluator.get_channel().write_block(&x.as_block())?;
+        }
+
         self.evaluator.get_channel().flush()?;
-        Ok(output)
+        Ok(outputs)
     }
 }
 
@@ -198,5 +208,5 @@ impl<C1: AbstractChannel, C2: AbstractChannel> Write for VerifyEqualChannel<C1, 
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG> SemiHonest for Evaluator<C1, C2, RNG> {}
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG> Malicious for Evaluator<C1, C2, RNG> {}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> SemiHonest for Evaluator<C1, C2, RNG> {}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Malicious for Evaluator<C1, C2, RNG> {}

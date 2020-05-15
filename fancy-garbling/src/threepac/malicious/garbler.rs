@@ -7,6 +7,7 @@
 use crate::{errors::{TwopacError, EvaluatorError}, util::tweak2, Fancy, FancyInput, FancyReveal, HasModulus, Garbler as Gb, threepac::malicious::PartyId, Wire};
 use rand::{CryptoRng, Rng, SeedableRng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
+use std::slice::from_ref;
 
 /// Semi-honest garbler.
 pub struct Garbler<C3, RNG> {
@@ -100,9 +101,9 @@ impl<
         assert!(from != self.party);
 
         if from == PartyId::Evaluator {
-            let shares = qs.iter().map(|_q| {
+            let shares = qs.iter().map(|_q|
                 self.garbler.get_channel().read_u16().map_err(Self::Error::from)
-            }).collect::<Result<Vec<u16>, TwopacError>>()?;
+            ).collect::<Result<Vec<u16>, TwopacError>>()?;
 
             let (wires1, wires2);
             if self.party == PartyId::Garbler1 {
@@ -114,9 +115,7 @@ impl<
             }
             let wires = wires1.iter()
                 .zip(wires2.iter())
-                .map(|(w1, w2)| {
-                    self.garbler.sub(w2, w1).map_err(Self::Error::from)
-                })
+                .map(|(w1, w2)| self.garbler.sub(w2, w1).map_err(Self::Error::from))
                 .collect::<Result<Vec<Wire>, TwopacError>>()?;
             Ok(wires)
         } else {
@@ -173,20 +172,32 @@ impl<C3: AbstractChannel, RNG: CryptoRng + Rng> Fancy for Garbler<C3, RNG> {
 
 impl<C3: AbstractChannel, RNG: CryptoRng + Rng, > FancyReveal for Garbler<C3, RNG> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
-        let q = x.modulus();
+        Ok(self.reveal_many(from_ref(x))?[0])
+    }
 
-        self.output(x).map_err(Self::Error::from)?;
-        self.get_channel().flush()?;
-        let eval_wire = Wire::from_block(self.get_channel().read_block()?, x.modulus());
-        let output = ((q as u32 + eval_wire.color() as u32 - x.color() as u32) % q as u32) as u16;
-
-        // Check that the wire label is correct
-        if self.garbler.delta(q).cmul_mov(output).plus_mov(x) != eval_wire {
-            // TODO: Better errors
-            return Err(TwopacError::EvaluatorError(EvaluatorError::DecodingFailed));
+    fn reveal_many(&mut self, xs: &[Self::Item]) -> Result<Vec<u16>, Self::Error> {
+        for x in xs.iter() {
+            self.output(x).map_err(Self::Error::from)?;
         }
 
-        Ok(output)
+        self.get_channel().flush()?;
+
+        xs.iter()
+            .map(|x| {
+                let q = x.modulus();
+                let eval_wire = Wire::from_block(self.get_channel().read_block()?, x.modulus());
+                let output =
+                    ((q as u32 + eval_wire.color() as u32 - x.color() as u32) % q as u32) as u16;
+
+                // Check that the wire label is correct
+                if self.garbler.delta(q).cmul_mov(output).plus_mov(x) != eval_wire {
+                    // TODO: Better errors
+                    return Err(TwopacError::EvaluatorError(EvaluatorError::DecodingFailed));
+                }
+
+                Ok(output)
+            })
+            .collect()
     }
 }
 

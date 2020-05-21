@@ -1,6 +1,6 @@
 // -*- mode: rust; -*-
 //
-// This file is part of twopac.
+// This file is part of threepac.
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
@@ -9,7 +9,7 @@ use rand::{CryptoRng, Rng, SeedableRng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
 use std::slice::from_ref;
 
-/// Semi-honest garbler.
+/// Malicious garbler.
 pub struct Garbler<C3, RNG> {
     garbler: Gb<C3, RNG>,
     party: PartyId,
@@ -93,7 +93,7 @@ impl<
                 Ok(mine)
             })
             .collect();
-        self.garbler.get_channel().flush()?;
+        self.get_channel().flush()?;
         ws
     }
 
@@ -102,7 +102,7 @@ impl<
 
         if from == PartyId::Evaluator {
             let shares = qs.iter().map(|_q|
-                self.garbler.get_channel().read_u16().map_err(Self::Error::from)
+                self.get_channel().read_u16().map_err(Self::Error::from)
             ).collect::<Result<Vec<u16>, TwopacError>>()?;
 
             let (wires1, wires2);

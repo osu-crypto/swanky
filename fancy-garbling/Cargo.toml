@@ -50,3 +50,7 @@ harness = false
 [[bench]]
 name = "semihonest_2pc"
 harness = false
+
+[[bench]]
+name = "malicious_3pc"
+harness = false

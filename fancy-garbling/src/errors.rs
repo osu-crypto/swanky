@@ -6,7 +6,6 @@
 
 //! Errors that may be output by this library.
 
-use scuttlebutt::Block;
 use std::fmt::{self, Display, Formatter};
 
 /// Errors that may occur when using the `Fancy` trait. These errors are
@@ -64,7 +63,7 @@ pub enum EvaluatorError {
     /// Decoding failed.
     DecodingFailed,
     /// A communication error has occurred.
-    CommunicationError(String),
+    CommunicationError(std::io::Error),
     /// A fancy error has occurred.
     FancyError(FancyError),
 }
@@ -73,7 +72,7 @@ pub enum EvaluatorError {
 #[derive(Debug)]
 pub enum GarblerError {
     /// An error occurred while processing a message.
-    CommunicationError(String),
+    CommunicationError(std::io::Error),
     /// Asymmetric moduli error.
     AsymmetricHalfGateModuliMax8(u16),
     /// A truth table was missing.
@@ -166,13 +165,7 @@ impl From<FancyError> for EvaluatorError {
 
 impl From<std::io::Error> for EvaluatorError {
     fn from(e: std::io::Error) -> Self {
-        EvaluatorError::CommunicationError(e.to_string())
-    }
-}
-
-impl From<std::sync::mpsc::RecvError> for EvaluatorError {
-    fn from(e: std::sync::mpsc::RecvError) -> Self {
-        EvaluatorError::CommunicationError(e.to_string())
+        EvaluatorError::CommunicationError(e)
     }
 }
 
@@ -211,13 +204,7 @@ impl From<FancyError> for GarblerError {
 
 impl From<std::io::Error> for GarblerError {
     fn from(e: std::io::Error) -> Self {
-        GarblerError::CommunicationError(e.to_string())
-    }
-}
-
-impl From<std::sync::mpsc::SendError<Vec<Block>>> for GarblerError {
-    fn from(e: std::sync::mpsc::SendError<Vec<Block>>) -> Self {
-        GarblerError::CommunicationError(e.to_string())
+        GarblerError::CommunicationError(e)
     }
 }
 
@@ -347,17 +334,5 @@ impl std::fmt::Display for TwopacError {
             TwopacError::GarblerError(e) => write!(f, "garbler error: {}", e),
             TwopacError::FancyError(e) => write!(f, "fancy error: {}", e),
         }
-    }
-}
-
-impl From<TwopacError> for GarblerError {
-    fn from(e: TwopacError) -> GarblerError {
-        GarblerError::CommunicationError(e.to_string())
-    }
-}
-
-impl From<TwopacError> for EvaluatorError {
-    fn from(e: TwopacError) -> EvaluatorError {
-        EvaluatorError::CommunicationError(e.to_string())
     }
 }

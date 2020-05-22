@@ -4,7 +4,7 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{errors::{TwopacError, EvaluatorError}, util::tweak2, Fancy, FancyInput, FancyReveal, HasModulus, Garbler as Gb, threepac::malicious::PartyId, Wire};
+use crate::{errors::{GarblerError, FancyError}, util::tweak2, Fancy, FancyInput, FancyReveal, HasModulus, Garbler as Gb, threepac::malicious::PartyId, Wire};
 use rand::{CryptoRng, Rng, SeedableRng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
 use std::slice::from_ref;
@@ -34,7 +34,7 @@ impl<
     > Garbler<C3, RNG>
 {
     /// Make a new `Garbler`.
-    pub fn new<C12: AbstractChannel>(party: PartyId, channel_p1_p2: &mut C12, channel_p3: C3, mut rng: RNG) -> Result<Self, TwopacError> {
+    pub fn new<C12: AbstractChannel>(party: PartyId, channel_p1_p2: &mut C12, channel_p3: C3, mut rng: RNG) -> Result<Self, Error> {
         assert!(party != PartyId::Evaluator);
 
         let seed: Block;
@@ -80,10 +80,10 @@ impl<
     > FancyInput for Garbler<C3, RNG>
 {
     type Item = Wire;
-    type Error = TwopacError;
+    type Error = Error;
     type PartyId = PartyId;
 
-    fn encode_many(&mut self, vals: &[u16], moduli: &[u16]) -> Result<Vec<Wire>, TwopacError> {
+    fn encode_many(&mut self, vals: &[u16], moduli: &[u16]) -> Result<Vec<Wire>, Error> {
         let ws = vals
             .iter()
             .zip(moduli.iter())
@@ -97,13 +97,13 @@ impl<
         ws
     }
 
-    fn receive_many(&mut self, from: PartyId, qs: &[u16]) -> Result<Vec<Wire>, TwopacError> {
+    fn receive_many(&mut self, from: PartyId, qs: &[u16]) -> Result<Vec<Wire>, Error> {
         assert!(from != self.party);
 
         if from == PartyId::Evaluator {
             let shares = qs.iter().map(|_q|
                 self.get_channel().read_u16().map_err(Self::Error::from)
-            ).collect::<Result<Vec<u16>, TwopacError>>()?;
+            ).collect::<Result<Vec<u16>, Error>>()?;
 
             let (wires1, wires2);
             if self.party == PartyId::Garbler1 {
@@ -116,7 +116,7 @@ impl<
             let wires = wires1.iter()
                 .zip(wires2.iter())
                 .map(|(w1, w2)| self.garbler.sub(w2, w1).map_err(Self::Error::from))
-                .collect::<Result<Vec<Wire>, TwopacError>>()?;
+                .collect::<Result<Vec<Wire>, Error>>()?;
             Ok(wires)
         } else {
             let wires = qs.iter().map(|q| {
@@ -130,7 +130,7 @@ impl<
                     label = label.plus_mov(&delta);
                 }
                 Ok(zero)
-            }).collect::<Result<Vec<Wire>, TwopacError>>()?;
+            }).collect::<Result<Vec<Wire>, Error>>()?;
             self.get_channel().flush()?;
             Ok(wires)
         }
@@ -139,7 +139,7 @@ impl<
 
 impl<C3: AbstractChannel, RNG: CryptoRng + Rng> Fancy for Garbler<C3, RNG> {
     type Item = Wire;
-    type Error = TwopacError;
+    type Error = Error;
 
     fn constant(&mut self, x: u16, q: u16) -> Result<Self::Item, Self::Error> {
         Ok(self.garbler.delta(q).negate_mov().cmul_mov(x))
@@ -191,8 +191,7 @@ impl<C3: AbstractChannel, RNG: CryptoRng + Rng, > FancyReveal for Garbler<C3, RN
 
                 // Check that the wire label is correct
                 if self.garbler.delta(q).cmul_mov(output).plus_mov(x) != eval_wire {
-                    // TODO: Better errors
-                    return Err(TwopacError::EvaluatorError(EvaluatorError::DecodingFailed));
+                    return Err(Error::InvalidResult);
                 }
 
                 Ok(output)
@@ -203,3 +202,47 @@ impl<C3: AbstractChannel, RNG: CryptoRng + Rng, > FancyReveal for Garbler<C3, RN
 
 impl<C3: AbstractChannel, RNG: CryptoRng + Rng> SemiHonest for Garbler<C3, RNG> {}
 impl<C3: AbstractChannel, RNG: CryptoRng + Rng> Malicious for Garbler<C3, RNG> {}
+
+/// Errors produced by `twopac`.
+#[derive(Debug)]
+pub enum Error {
+    /// An I/O error has occurred.
+    IoError(std::io::Error),
+    /// The underlying garbler produced an error.
+    GarblerError(GarblerError),
+    /// Processing the garbled circuit produced an error.
+    FancyError(FancyError),
+    /// Evaluator may be malicious!!!
+    InvalidResult,
+}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Error {
+        Error::IoError(e)
+    }
+}
+
+impl From<GarblerError> for Error {
+    fn from(e: GarblerError) -> Error {
+        Error::GarblerError(e)
+    }
+}
+
+impl From<FancyError> for Error {
+    fn from(e: FancyError) -> Error {
+        Error::FancyError(e)
+    }
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Error::IoError(e) => write!(f, "IO error: {}", e),
+            Error::GarblerError(e) => write!(f, "garbler error: {}", e),
+            Error::FancyError(e) => write!(f, "fancy error: {}", e),
+            Error::InvalidResult => write!(f, "evaluator sent invalid output wire label"),
+        }
+    }
+}
+
+impl std::error::Error for Error {}

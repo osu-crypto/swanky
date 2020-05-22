@@ -4,7 +4,7 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{errors::TwopacError, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, threepac::malicious::PartyId, Wire};
+use crate::{errors::{EvaluatorError, FancyError}, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, threepac::malicious::PartyId, Wire};
 use rand::{CryptoRng, Rng};
 use scuttlebutt::{AbstractChannel, SemiHonest, Malicious};
 use std::io;
@@ -29,7 +29,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng>
     Evaluator<C1, C2, RNG>
 {
     /// Make a new `Evaluator`.
-    pub fn new(channel_p1: C1, channel_p2: C2, rng: RNG) -> Result<Self, TwopacError> {
+    pub fn new(channel_p1: C1, channel_p2: C2, rng: RNG) -> Result<Self, Error> {
         let channel = VerifyEqualChannel {
             channel_p1,
             channel_p2,
@@ -50,7 +50,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng>
     }
 
 
-    fn secret_share(&mut self, input: u16, modulus: u16) -> Result<(), TwopacError> {
+    fn secret_share(&mut self, input: u16, modulus: u16) -> Result<(), Error> {
         let p1: u16 =  self.rng.gen();
         let channel_p1 = self.get_channel_p1();
         channel_p1.write_u16(p1)?;
@@ -67,11 +67,11 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
     for Evaluator<C1, C2, RNG>
 {
     type Item = Wire;
-    type Error = TwopacError;
+    type Error = Error;
     type PartyId = PartyId;
 
     /// Receive a garbler input wire.
-    fn receive(&mut self, from: PartyId, modulus: u16) -> Result<Wire, TwopacError> {
+    fn receive(&mut self, from: PartyId, modulus: u16) -> Result<Wire, Error> {
         assert!(from != PartyId::Evaluator);
 
         let block = if from == PartyId::Garbler1 {
@@ -95,20 +95,19 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
         for _ in (color+1)..modulus { read_commitment()?; }
 
         if label.hash(tweak2(color as u64, 2)) != commitment {
-            // TODO: Better errors
-            return Result::Err(TwopacError::IoError(io::Error::new(io::ErrorKind::ConnectionAborted, "Wire doesn't match commitment")));
+            return Result::Err(Error::InvalidCommitment);
         }
 
         Ok(label)
     }
 
     /// Receive garbler input wires.
-    fn receive_many(&mut self, from: PartyId, moduli: &[u16]) -> Result<Vec<Wire>, TwopacError> {
+    fn receive_many(&mut self, from: PartyId, moduli: &[u16]) -> Result<Vec<Wire>, Error> {
         moduli.iter().map(|q| self.receive(from, *q)).collect()
     }
 
     /// Obtain wires for the evaluator's inputs.
-    fn encode_many(&mut self, inputs: &[u16], moduli: &[u16]) -> Result<Vec<Wire>, TwopacError> {
+    fn encode_many(&mut self, inputs: &[u16], moduli: &[u16]) -> Result<Vec<Wire>, Error> {
         for (x, q) in inputs.iter().zip(moduli.iter()) {
             self.secret_share(*x, *q)?;
         }
@@ -126,7 +125,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
 
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Fancy for Evaluator<C1, C2, RNG> {
     type Item = Wire;
-    type Error = TwopacError;
+    type Error = Error;
 
     fn constant(&mut self, _: u16, q: u16) -> Result<Self::Item, Self::Error> {
         Ok(Wire::zero(q))
@@ -186,7 +185,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel> Read for VerifyEqualChannel<C1, C
 
         // Check equality
         if bytes[..bytes_read] != p2_buf[..] {
-            return Result::Err(io::Error::new(io::ErrorKind::ConnectionAborted, "Parties 1 and 2 disagree"));
+            return Result::Err(io::Error::new(io::ErrorKind::ConnectionAborted, Error::GarblerMismatch));
         }
 
         Ok(bytes_read)
@@ -210,3 +209,68 @@ impl<C1: AbstractChannel, C2: AbstractChannel> Write for VerifyEqualChannel<C1, 
 
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> SemiHonest for Evaluator<C1, C2, RNG> {}
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Malicious for Evaluator<C1, C2, RNG> {}
+
+/// Errors produced by `twopac`.
+#[derive(Debug)]
+pub enum Error {
+    /// An I/O error has occurred.
+    IoError(io::Error),
+    /// The underlying garbler produced an error.
+    EvaluatorError(EvaluatorError),
+    /// Processing the garbled circuit produced an error.
+    FancyError(FancyError),
+    /// Garbler may be malicious!!!
+    GarblerMismatch,
+    InvalidCommitment,
+}
+
+fn downcast_error(e: io::Error) -> Result<Error, io::Error> {
+    let kind = e.kind();
+    match e.into_inner().ok_or::<io::Error>(kind.into())?.downcast::<Error>() {
+        Ok(e) => Ok(*e),
+        Err(e) => Err(io::Error::new(kind, e)),
+    }
+}
+
+impl From<io::Error> for Error {
+    fn from(e: io::Error) -> Error {
+        match downcast_error(e) {
+            Ok(e) => e,
+            Err(e) => Error::IoError(e),
+        }
+    }
+}
+
+impl From<EvaluatorError> for Error {
+    fn from(e: EvaluatorError) -> Error {
+        // Downcast to look check for.
+        if let EvaluatorError::CommunicationError(e) = e {
+            match downcast_error(e) {
+                Ok(e) => e,
+                Err(e) => Error::EvaluatorError(EvaluatorError::CommunicationError(e)),
+            }
+        } else {
+            Error::EvaluatorError(e)
+        }
+    }
+}
+
+impl From<FancyError> for Error {
+    fn from(e: FancyError) -> Error {
+        Error::FancyError(e)
+    }
+}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Error::IoError(e) => write!(f, "IO error: {}", e),
+            Error::EvaluatorError(e) => write!(f, "evaluator error: {}", e),
+            Error::FancyError(e) => write!(f, "fancy error: {}", e),
+            Error::GarblerMismatch => write!(f, "garbler disagree over the circuit"),
+            Error::InvalidCommitment => write!(f, "garbler did not decommit correctly"),
+        }
+    }
+}
+
+impl std::error::Error for Error {}

@@ -83,11 +83,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
         let color = label.color();
 
         let mut read_commitment = || {
-            if from == PartyId::Garbler1 {
-                self.get_channel_p2().read_block()
-            } else {
-                self.get_channel_p1().read_block()
-            }
+            self.evaluator.get_channel().read_block()
         };
 
         for _ in 0..color { read_commitment()?; }

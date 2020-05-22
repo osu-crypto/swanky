@@ -88,9 +88,18 @@ impl<
             .iter()
             .zip(moduli.iter())
             .map(|(x, q)| {
-                let (mine, theirs) = self.garbler.encode_wire(*x, *q);
+                let (zero, theirs) = self.garbler.encode_wire(*x, *q);
+                let delta = self.garbler.delta(*q);
                 self.garbler.send_wire(&theirs)?;
-                Ok(mine)
+
+                // Commit to all wire labels. Order by color to avoid leaking which label has which value.
+                let mut label = zero.minus(&delta.cmul(zero.color()));
+                for i in 0..*q {
+                    self.get_channel().write_block(&label.hash(tweak2(i as u64, 2)))?;
+                    label = label.plus_mov(&delta);
+                }
+
+                Ok(zero)
             })
             .collect();
         self.get_channel().flush()?;

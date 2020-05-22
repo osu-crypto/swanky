@@ -6,8 +6,8 @@
 
 //! Implementation of malicious three-party computation.
 
-mod evaluator;
-mod garbler;
+pub mod evaluator;
+pub mod garbler;
 
 #[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub enum PartyId {
@@ -16,11 +16,10 @@ pub enum PartyId {
     Evaluator,
 }
 
-pub use evaluator::Evaluator;
-pub use garbler::Garbler;
-
 #[cfg(test)]
 mod tests {
+    use evaluator::Evaluator;
+    use garbler::Garbler;
     use super::*;
     use crate::{
         circuit::Circuit,

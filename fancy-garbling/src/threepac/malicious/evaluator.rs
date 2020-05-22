@@ -17,7 +17,7 @@ struct VerifyEqualChannel<C1, C2> {
     channel_p2: C2,
 }
 
-/// Malicious evaluator.
+/// Honest majority three party evaluator.
 pub struct Evaluator<C1, C2, RNG> {
     evaluator: Ev<VerifyEqualChannel<C1, C2>>,
     rng: RNG,
@@ -41,15 +41,18 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng>
         })
     }
 
+    /// Get communication channel with Garbler 1
     pub fn get_channel_p1(&mut self) -> &mut C1 {
         &mut self.evaluator.get_channel().channel_p1
     }
 
+    /// Get communication channel with Garbler 2
     pub fn get_channel_p2(&mut self) -> &mut C2 {
         &mut self.evaluator.get_channel().channel_p2
     }
 
 
+    /// Secret share Evaluator input among Garbler 1 and 2.
     fn secret_share(&mut self, input: u16, modulus: u16) -> Result<(), Error> {
         let p1: u16 =  self.rng.gen();
         let channel_p1 = self.get_channel_p1();
@@ -206,7 +209,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel> Write for VerifyEqualChannel<C1, 
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> SemiHonest for Evaluator<C1, C2, RNG> {}
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Malicious for Evaluator<C1, C2, RNG> {}
 
-/// Errors produced by `twopac`.
+/// Errors produced by `threepac` Evaluator.
 #[derive(Debug)]
 pub enum Error {
     /// An I/O error has occurred.

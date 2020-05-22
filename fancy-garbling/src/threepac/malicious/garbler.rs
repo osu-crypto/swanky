@@ -9,7 +9,7 @@ use rand::{CryptoRng, Rng, SeedableRng};
 use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious};
 use std::slice::from_ref;
 
-/// Malicious garbler.
+/// Honest majority three party garbler.
 pub struct Garbler<C3, RNG> {
     garbler: Gb<C3, RNG>,
     party: PartyId,
@@ -203,7 +203,7 @@ impl<C3: AbstractChannel, RNG: CryptoRng + Rng, > FancyReveal for Garbler<C3, RN
 impl<C3: AbstractChannel, RNG: CryptoRng + Rng> SemiHonest for Garbler<C3, RNG> {}
 impl<C3: AbstractChannel, RNG: CryptoRng + Rng> Malicious for Garbler<C3, RNG> {}
 
-/// Errors produced by `twopac`.
+/// Errors produced by `threepac` Garbler.
 #[derive(Debug)]
 pub enum Error {
     /// An I/O error has occurred.

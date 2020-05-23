@@ -24,6 +24,7 @@ pub mod commitment;
 mod hash_aes;
 mod rand_aes;
 pub mod utils;
+mod universal_digest;
 
 pub use crate::{
     aes::{
@@ -35,6 +36,7 @@ pub use crate::{
     channel::{AbstractChannel, Channel, HashChannel, TrackChannel},
     hash_aes::{AesHash, AES_HASH},
     rand_aes::AesRng,
+    universal_digest::UniversalDigest,
 };
 
 #[cfg(unix)]

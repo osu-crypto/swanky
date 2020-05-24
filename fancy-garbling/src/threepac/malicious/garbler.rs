@@ -113,8 +113,6 @@ impl<
         }
 
         self.get_hash_channel().send_hash()?;
-        // TODO: Shouldn't these flushes be at the start of receive from evaluator.
-        self.get_hash_channel().flush()?;
 
         Ok(ws)
     }
@@ -123,6 +121,7 @@ impl<
         assert!(from != self.party);
 
         if from == PartyId::Evaluator {
+            self.get_hash_channel().flush()?;
             let shares = qs.iter().map(|_q|
                 self.get_channel().read_u16().map_err(Self::Error::from)
             ).collect::<Result<Vec<u16>, Error>>()?;
@@ -148,7 +147,6 @@ impl<
             }).collect::<Result<Vec<Wire>, Error>>()?;
 
             self.get_hash_channel().send_hash()?;
-            self.get_hash_channel().flush()?;
 
             Ok(wires)
         }

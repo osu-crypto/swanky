@@ -7,7 +7,7 @@
 use crate::{errors::{EvaluatorError, FancyError}, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, threepac::malicious::PartyId, Wire};
 use digest::{FixedOutput, Input, Reset};
 use rand::{CryptoRng, Rng};
-use scuttlebutt::{AbstractChannel, SemiHonest, Malicious, UniversalDigest};
+use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious, UniversalDigest};
 use std::cmp::min;
 use std::io;
 use std::io::{Read, Write};
@@ -81,38 +81,33 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
     type Error = Error;
     type PartyId = PartyId;
 
-    /// Receive a garbler input wire.
-    fn receive(&mut self, from: PartyId, modulus: u16) -> Result<Wire, Error> {
-        assert!(from != PartyId::Evaluator);
-
-        // TODO: Do hashes need to be checked now, or only when whole circuit is evaluated.
-
-        let block = if from == PartyId::Garbler1 {
-            self.get_channel_p1().read_block()
-        } else {
-            self.get_channel_p2().read_block()
-        }?;
-        let label = Wire::from_block(block, modulus);
-        let color = label.color();
-
-        let mut read_commitment = || {
-            self.evaluator.get_channel().read_block()
-        };
-
-        for _ in 0..color { read_commitment()?; }
-        let commitment = read_commitment()?;
-        for _ in (color+1)..modulus { read_commitment()?; }
-
-        if label.hash(tweak2(color as u64, 2)) != commitment {
-            return Err(Error::InvalidCommitment);
-        }
-
-        Ok(label)
-    }
-
     /// Receive garbler input wires.
     fn receive_many(&mut self, from: PartyId, moduli: &[u16]) -> Result<Vec<Wire>, Error> {
-        moduli.iter().map(|q| self.receive(from, *q)).collect()
+        assert!(from != PartyId::Evaluator);
+
+        let labels = moduli.iter().map(|q| {
+            let block = if from == PartyId::Garbler1 {
+                self.get_channel_p1().read_block()
+            } else {
+                self.get_channel_p2().read_block()
+            }?;
+            Ok(Wire::from_block(block, *q))
+        }).collect::<Result<Vec<Wire>, Error>>()?;
+
+        let commitments = labels.iter().zip(moduli.iter()).map(|(label, q)|
+            Ok(self.evaluator.get_channel().read_blocks(*q as usize)?[label.color() as usize])
+        ).collect::<Result<Vec<Block>, Error>>()?;
+
+        // Make sure that we don't leak when one garbler sends some invalid commitments.
+        self.evaluator.get_channel().check_hashes()?;
+
+        for (label, commitment) in labels.iter().zip(commitments.iter()) {
+            if label.hash(tweak2(label.color() as u64, 2)) != *commitment {
+                return Err(Error::InvalidCommitment);
+            }
+        }
+
+        Ok(labels)
     }
 
     /// Obtain wires for the evaluator's inputs.

@@ -71,6 +71,19 @@ impl<
     fn get_hash_channel(&mut self) -> &mut AlternatingHashChannel<C3, UniversalDigest<H>> {
         self.garbler.get_channel()
     }
+
+    // Commit to all wire labels. Order by color to avoid leaking which label has which value.
+    fn send_commitments(&mut self, zero: &Wire) -> Result<(), Error> {
+        let q = zero.modulus();
+        let delta = self.garbler.delta(q);
+        let mut label = zero.minus(&delta.cmul(zero.color()));
+        for i in 0..q {
+            self.get_hash_channel().write_block(&label.hash(tweak2(i as u64, 2)))?;
+            label = label.plus_mov(&delta);
+        }
+
+        Ok(())
+    }
 }
 
 impl<
@@ -89,21 +102,21 @@ impl<
             .zip(moduli.iter())
             .map(|(x, q)| {
                 let (zero, theirs) = self.garbler.encode_wire(*x, *q);
-                let delta = self.garbler.delta(*q);
                 self.get_channel().write_block(&theirs.as_block())?;
-
-                // Make sure other garbler's commitments to all wire labels are correct.
-                let mut label = zero.minus(&delta.cmul(zero.color()));
-                for i in 0..*q {
-                    self.get_hash_channel().write_block(&label.hash(tweak2(i as u64, 2)))?;
-                    label = label.plus_mov(&delta);
-                }
-
                 Ok(zero)
             })
-            .collect();
+            .collect::<Result<Vec<Wire>, Error>>()?;
+
+        // Make sure the other garbler's commitments to all wire labels are correct.
+        for zero in ws.iter() {
+            self.send_commitments(&zero)?;
+        }
+
+        self.get_hash_channel().send_hash()?;
+        // TODO: Shouldn't these flushes be at the start of receive from evaluator.
         self.get_hash_channel().flush()?;
-        ws
+
+        Ok(ws)
     }
 
     fn receive_many(&mut self, from: PartyId, qs: &[u16]) -> Result<Vec<Wire>, Error> {
@@ -130,17 +143,13 @@ impl<
         } else {
             let wires = qs.iter().map(|q| {
                 let zero = self.garbler.create_wire(*q);
-                let delta = self.garbler.delta(*q);
-
-                // Commit to all wire labels. Order by color to avoid leaking which label has which value.
-                let mut label = zero.minus(&delta.cmul(zero.color()));
-                for i in 0..*q {
-                    self.get_hash_channel().write_block(&label.hash(tweak2(i as u64, 2)))?;
-                    label = label.plus_mov(&delta);
-                }
+                self.send_commitments(&zero)?;
                 Ok(zero)
             }).collect::<Result<Vec<Wire>, Error>>()?;
+
+            self.get_hash_channel().send_hash()?;
             self.get_hash_channel().flush()?;
+
             Ok(wires)
         }
     }

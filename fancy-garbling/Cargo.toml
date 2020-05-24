@@ -22,14 +22,17 @@ serde1 = ["serde", "scuttlebutt/serde1"]
 base_conversion = { path = "base_conversion" }
 scuttlebutt = { path = "../scuttlebutt" }
 ocelot = { path = "../ocelot" }
+digest = "0.8"
 itertools = "0.8"
 rand = "0.7"
 regex = "1.1"
 serde = { version = "1", features = ["derive"], optional = true }
+universal-hash = "0.3"
 
 [dev-dependencies]
 criterion = "0.3.0"
 crossbeam = "0.7.1"
+poly1305 = "0.5"
 
 [[bench]]
 name = "wire_operations"

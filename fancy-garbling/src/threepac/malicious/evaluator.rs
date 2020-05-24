@@ -5,35 +5,43 @@
 // See LICENSE for licensing information.
 
 use crate::{errors::{EvaluatorError, FancyError}, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, threepac::malicious::PartyId, Wire};
+use digest::{FixedOutput, Input, Reset};
 use rand::{CryptoRng, Rng};
-use scuttlebutt::{AbstractChannel, SemiHonest, Malicious};
+use scuttlebutt::{AbstractChannel, SemiHonest, Malicious, UniversalDigest};
+use std::cmp::min;
 use std::io;
 use std::io::{Read, Write};
 use std::slice::from_ref;
+use universal_hash::{generic_array::{ArrayLength, GenericArray}, UniversalHash};
+
+struct HashedRead<C, H> {
+    channel: C,
+    hash: H,
+}
 
 /// A communication channel that verifies that both parties are providing the same data.
-struct VerifyEqualChannel<C1, C2> {
-    channel_p1: C1,
-    channel_p2: C2,
+struct VerifyChannel<C1, C2, H: UniversalHash> {
+    channel_p1: HashedRead<C1, UniversalDigest<H>>,
+    channel_p2: HashedRead<C2, UniversalDigest<H>>,
+
+    alternate_every: usize,
+    index: usize,
 }
 
 /// Honest majority three party evaluator.
-pub struct Evaluator<C1, C2, RNG> {
-    evaluator: Ev<VerifyEqualChannel<C1, C2>>,
+pub struct Evaluator<C1, C2, RNG, H: UniversalHash> {
+    evaluator: Ev<VerifyChannel<C1, C2, H>>,
     rng: RNG,
 }
 
-impl<C1, C2, RNG> Evaluator<C1, C2, RNG> {}
+impl<C1, C2, RNG, H: UniversalHash> Evaluator<C1, C2, RNG, H> {}
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng>
-    Evaluator<C1, C2, RNG>
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash>
+    Evaluator<C1, C2, RNG, H>
 {
     /// Make a new `Evaluator`.
-    pub fn new(channel_p1: C1, channel_p2: C2, rng: RNG) -> Result<Self, Error> {
-        let channel = VerifyEqualChannel {
-            channel_p1,
-            channel_p2,
-        };
+    pub fn new(channel_p1: C1, channel_p2: C2, rng: RNG, alternate_every: usize) -> Result<Self, Error> {
+        let channel = VerifyChannel::new(channel_p1, channel_p2, alternate_every)?;
         let evaluator = Ev::new(channel);
         Ok(Self {
             evaluator,
@@ -43,12 +51,12 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng>
 
     /// Get communication channel with Garbler 1
     pub fn get_channel_p1(&mut self) -> &mut C1 {
-        &mut self.evaluator.get_channel().channel_p1
+        &mut self.evaluator.get_channel().channel_p1.channel
     }
 
     /// Get communication channel with Garbler 2
     pub fn get_channel_p2(&mut self) -> &mut C2 {
-        &mut self.evaluator.get_channel().channel_p2
+        &mut self.evaluator.get_channel().channel_p2.channel
     }
 
 
@@ -66,8 +74,8 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng>
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
-    for Evaluator<C1, C2, RNG>
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> FancyInput
+    for Evaluator<C1, C2, RNG, H>
 {
     type Item = Wire;
     type Error = Error;
@@ -76,6 +84,8 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
     /// Receive a garbler input wire.
     fn receive(&mut self, from: PartyId, modulus: u16) -> Result<Wire, Error> {
         assert!(from != PartyId::Evaluator);
+
+        // TODO: Do hashes need to be checked now, or only when whole circuit is evaluated.
 
         let block = if from == PartyId::Garbler1 {
             self.get_channel_p1().read_block()
@@ -94,7 +104,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
         for _ in (color+1)..modulus { read_commitment()?; }
 
         if label.hash(tweak2(color as u64, 2)) != commitment {
-            return Result::Err(Error::InvalidCommitment);
+            return Err(Error::InvalidCommitment);
         }
 
         Ok(label)
@@ -122,7 +132,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyInput
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Fancy for Evaluator<C1, C2, RNG> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> Fancy for Evaluator<C1, C2, RNG, H> {
     type Item = Wire;
     type Error = Error;
 
@@ -151,11 +161,13 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Fancy for E
     }
 
     fn output(&mut self, x: &Wire) -> Result<Option<u16>, Self::Error> {
-        self.evaluator.output(&x).map_err(Self::Error::from)
+        let out = self.evaluator.output(&x)?;
+        self.evaluator.get_channel().check_hashes()?;
+        Ok(out)
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyReveal for Evaluator<C1, C2, RNG> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> FancyReveal for Evaluator<C1, C2, RNG, H> {
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
         Ok(self.reveal_many(from_ref(x))?[0])
     }
@@ -163,8 +175,9 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyReveal
     fn reveal_many(&mut self, xs: &[Self::Item]) -> Result<Vec<u16>, Self::Error> {
         let outputs = xs
             .iter()
-            .map(|x| Ok(self.output(x)?.expect("Evaluator always outputs Some(u16)")))
+            .map(|x| Ok(self.evaluator.output(x)?.expect("Evaluator always outputs Some(u16)")))
             .collect::<Result<Vec<u16>, Self::Error>>()?;
+        self.evaluator.get_channel().check_hashes()?; // TODO: Anywhere else?
 
         for x in xs.iter() {
             self.evaluator.get_channel().write_block(&x.as_block())?;
@@ -175,39 +188,92 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> FancyReveal
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel> Read for VerifyEqualChannel<C1, C2> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> SemiHonest for Evaluator<C1, C2, RNG, H> {}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> Malicious for Evaluator<C1, C2, RNG, H> {}
+
+impl<C: AbstractChannel, H: Clone + FixedOutput + Reset> HashedRead<C, H> {
+    fn compute_hash(&mut self) -> GenericArray<u8, H::OutputSize> {
+        let hash = self.hash.clone().fixed_result();
+        self.hash.reset();
+        hash
+    }
+}
+
+impl<C: AbstractChannel, H> HashedRead<C, H> {
+    fn read_hash<Size: ArrayLength<u8>>(&mut self) -> io::Result<GenericArray<u8, Size>> {
+        let mut hash = GenericArray::default();
+        self.channel.read_exact(&mut hash)?;
+        Ok(hash)
+    }
+}
+
+impl<C: AbstractChannel, H: Input> Read for HashedRead<C, H> {
     #[inline]
     fn read(&mut self, mut bytes: &mut [u8]) -> io::Result<usize> {
-        let bytes_read = self.channel_p1.read(&mut bytes)?;
-        let mut p2_buf = vec![0u8; bytes_read];
-        self.channel_p2.read_exact(&mut p2_buf[..])?;
-
-        // Check equality
-        if bytes[..bytes_read] != p2_buf[..] {
-            return Result::Err(io::Error::new(io::ErrorKind::ConnectionAborted, Error::GarblerMismatch));
-        }
-
+        let bytes_read = self.channel.read(&mut bytes)?;
+        self.hash.input(&bytes[..bytes_read]);
         Ok(bytes_read)
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel> Write for VerifyEqualChannel<C1, C2> {
+impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> VerifyChannel<C1, C2, H> {
+    fn new(mut channel_p1: C1, mut channel_p2: C2, alternate_every: usize) -> Result<Self, Error> {
+        let mut hash_key1 = GenericArray::default();
+        let mut hash_key2 = GenericArray::default();
+        // Each party generates the seed that will hash the other party's data, protecting the seed
+        // from the party it checks.
+        channel_p1.read_exact(&mut hash_key2)?;
+        channel_p2.read_exact(&mut hash_key1)?;
+
+        Ok(VerifyChannel {
+            channel_p1: HashedRead { channel: channel_p1, hash: UniversalDigest::new(&hash_key1) },
+            channel_p2: HashedRead { channel: channel_p2, hash: UniversalDigest::new(&hash_key2) },
+            alternate_every,
+            index: 0,
+        })
+    }
+
+    fn check_hashes(&mut self) -> Result<(), Error> {
+        if self.channel_p1.read_hash()? != self.channel_p2.compute_hash() ||
+           self.channel_p2.read_hash()? != self.channel_p1.compute_hash() {
+            return Err( Error::GarblerMismatch);
+        }
+        Ok(())
+    }
+}
+
+impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> Read for VerifyChannel<C1, C2, H> {
+    #[inline]
+    fn read(&mut self, bytes: &mut [u8]) -> io::Result<usize> {
+        let bytes_read;
+        if self.index < self.alternate_every {
+            let len = min(self.alternate_every - self.index, bytes.len());
+            bytes_read = self.channel_p1.read(&mut bytes[..len])?;
+        } else {
+            let len = min(2*self.alternate_every - self.index, bytes.len());
+            bytes_read = self.channel_p2.read(&mut bytes[..len])?;
+        }
+
+        self.index += bytes_read;
+        if self.index == 2*self.alternate_every { self.index = 0 }
+        Ok(bytes_read)
+    }
+}
+
+impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> Write for VerifyChannel<C1, C2, H> {
     #[inline]
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        let bytes_written = self.channel_p1.write(bytes)?;
-        self.channel_p2.write_all(&bytes[..bytes_written])?;
+        let bytes_written = self.channel_p1.channel.write(bytes)?;
+        self.channel_p2.channel.write_all(&bytes[..bytes_written])?;
         Ok(bytes_written)
     }
 
     #[inline]
     fn flush(&mut self) -> io::Result<()> {
-        self.channel_p1.flush()?;
-        self.channel_p2.flush()
+        self.channel_p1.channel.flush()?;
+        self.channel_p2.channel.flush()
     }
 }
-
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> SemiHonest for Evaluator<C1, C2, RNG> {}
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng> Malicious for Evaluator<C1, C2, RNG> {}
 
 /// Errors produced by `threepac` Evaluator.
 #[derive(Debug)]
@@ -223,34 +289,15 @@ pub enum Error {
     InvalidCommitment,
 }
 
-fn downcast_error(e: io::Error) -> Result<Error, io::Error> {
-    let kind = e.kind();
-    match e.into_inner().ok_or::<io::Error>(kind.into())?.downcast::<Error>() {
-        Ok(e) => Ok(*e),
-        Err(e) => Err(io::Error::new(kind, e)),
-    }
-}
-
 impl From<io::Error> for Error {
     fn from(e: io::Error) -> Error {
-        match downcast_error(e) {
-            Ok(e) => e,
-            Err(e) => Error::IoError(e),
-        }
+        Error::IoError(e)
     }
 }
 
 impl From<EvaluatorError> for Error {
     fn from(e: EvaluatorError) -> Error {
-        // Downcast to look check for.
-        if let EvaluatorError::CommunicationError(e) = e {
-            match downcast_error(e) {
-                Ok(e) => e,
-                Err(e) => Error::EvaluatorError(EvaluatorError::CommunicationError(e)),
-            }
-        } else {
-            Error::EvaluatorError(e)
-        }
+        Error::EvaluatorError(e)
     }
 }
 

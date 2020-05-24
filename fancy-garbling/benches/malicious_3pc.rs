@@ -9,9 +9,10 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use fancy_garbling::{
     circuit::Circuit,
-    threepac::malicious::{Evaluator, Garbler, PartyId},
+    threepac::malicious::{evaluator::Evaluator, garbler::Garbler, PartyId},
     FancyInput,
 };
+use poly1305::Poly1305;
 use scuttlebutt::{AesRng, Channel};
 use std::{
     io::{BufReader, BufWriter},
@@ -22,6 +23,8 @@ use std::{
 type Reader = BufReader<UnixStream>;
 type Writer = BufWriter<UnixStream>;
 type UnixChannel = Channel<Reader, Writer>;
+
+const HASH_CHUNK_SIZE: usize = 0x1000;
 
 fn circuit(fname: &str) -> Circuit {
     Circuit::parse(fname).unwrap()
@@ -50,7 +53,7 @@ fn _bench_circuit(circ: &Circuit, gb1_inputs: Vec<u16>, gb2_inputs: Vec<u16>, ev
     let handle1 = std::thread::spawn(move || {
         let rng = AesRng::new();
         let mut gb =
-            Garbler::<UnixChannel, AesRng>::new(PartyId::Garbler1, &mut p1top2, p1top3, rng)
+            Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler1, &mut p1top2, p1top3, rng, HASH_CHUNK_SIZE)
             .unwrap();
         let mut xs1 = gb.encode_many(&gb1_inputs, &vec![2; n_gb1_inputs]).unwrap();
         let mut xs2 = gb.receive_many(PartyId::Garbler2, &vec![2; n_gb2_inputs]).unwrap();
@@ -62,7 +65,7 @@ fn _bench_circuit(circ: &Circuit, gb1_inputs: Vec<u16>, gb2_inputs: Vec<u16>, ev
     let handle2 = std::thread::spawn(move || {
         let rng = AesRng::new();
         let mut gb =
-            Garbler::<UnixChannel, AesRng>::new(PartyId::Garbler2, &mut p2top1, p2top3, rng)
+            Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler2, &mut p2top1, p2top3, rng, HASH_CHUNK_SIZE)
             .unwrap();
         let mut xs1 = gb.receive_many(PartyId::Garbler1, &vec![2; n_gb1_inputs]).unwrap();
         let mut xs2 = gb.encode_many(&gb2_inputs, &vec![2; n_gb2_inputs]).unwrap();
@@ -73,7 +76,7 @@ fn _bench_circuit(circ: &Circuit, gb1_inputs: Vec<u16>, gb2_inputs: Vec<u16>, ev
     });
     let rng = AesRng::new();
     let mut ev =
-        Evaluator::<UnixChannel, UnixChannel, AesRng>::new(p3top1, p3top2, rng)
+        Evaluator::<UnixChannel, UnixChannel, AesRng, Poly1305>::new(p3top1, p3top2, rng, HASH_CHUNK_SIZE)
             .unwrap();
     let mut g1 = ev.receive_many(PartyId::Garbler1, &vec![2; n_gb1_inputs]).unwrap();
     let mut g2 = ev.receive_many(PartyId::Garbler2, &vec![2; n_gb2_inputs]).unwrap();

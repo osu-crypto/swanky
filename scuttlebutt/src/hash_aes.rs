@@ -44,7 +44,7 @@ impl AesHash {
     /// <https://eprint.iacr.org/2019/074>, §7.3).
     ///
     /// The function computes `H(σ(x))`, where `H` is a correlation-robust hash
-    /// function and `σ(x₀ || x₁) = (x₀ ⊕ x₁) || x₁`.
+    /// function and `σ(x₀ || x₁) = (x₀ ⊕ x₁) || x₀`.
     #[inline]
     pub fn ccr_hash(&self, i: Block, x: Block) -> Block {
         unsafe {

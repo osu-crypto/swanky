@@ -21,8 +21,8 @@ struct HashedRead<C, H> {
 
 /// A communication channel that verifies that both parties are providing the same data.
 struct VerifyChannel<C1, C2, H: UniversalHash> {
-    channel_p1: HashedRead<C1, UniversalDigest<H>>,
-    channel_p2: HashedRead<C2, UniversalDigest<H>>,
+    channel_garbler_1: HashedRead<C1, UniversalDigest<H>>,
+    channel_garbler_2: HashedRead<C2, UniversalDigest<H>>,
 
     alternate_every: usize,
     bytes_hashed: usize,
@@ -39,11 +39,11 @@ impl<C1, C2, RNG, H: UniversalHash> Evaluator<C1, C2, RNG, H> {}
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash>
     Evaluator<C1, C2, RNG, H>
 {
-    /// Make a new `Evaluator`. The protocol calls for two `Garblers`, which are parties 1 and 2.
-    /// They take turns sending the garbled circuit to party 3, the evaluator, switching places
-    /// every `alternate_every` bytes. `alternate_every` must match between all 3 parties.
-    pub fn new(channel_p1: C1, channel_p2: C2, rng: RNG, alternate_every: usize) -> Result<Self, Error> {
-        let channel = VerifyChannel::new(channel_p1, channel_p2, alternate_every)?;
+    /// Make a new `Evaluator`. The protocol calls for two `Garblers`, which take turns sending the
+    /// garbled circuit to the evaluator, switching places every `alternate_every` bytes.
+    /// `alternate_every` must match between all 3 parties.
+    pub fn new(channel_garbler_1: C1, channel_garbler_2: C2, rng: RNG, alternate_every: usize) -> Result<Self, Error> {
+        let channel = VerifyChannel::new(channel_garbler_1, channel_garbler_2, alternate_every)?;
         let evaluator = Ev::new(channel);
         Ok(Self {
             evaluator,
@@ -52,25 +52,25 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
     }
 
     /// Get communication channel with Garbler 1
-    pub fn get_channel_p1(&mut self) -> &mut C1 {
-        &mut self.evaluator.get_channel().channel_p1.channel
+    pub fn get_channel_garbler_1(&mut self) -> &mut C1 {
+        &mut self.evaluator.get_channel().channel_garbler_1.channel
     }
 
     /// Get communication channel with Garbler 2
-    pub fn get_channel_p2(&mut self) -> &mut C2 {
-        &mut self.evaluator.get_channel().channel_p2.channel
+    pub fn get_channel_garbler_2(&mut self) -> &mut C2 {
+        &mut self.evaluator.get_channel().channel_garbler_2.channel
     }
 
 
     /// Secret share Evaluator input among Garbler 1 and 2.
     fn secret_share(&mut self, input: u16, modulus: u16) -> Result<(), Error> {
-        let p1: u16 =  self.rng.gen();
-        let channel_p1 = self.get_channel_p1();
-        channel_p1.write_u16(p1)?;
+        let garbler_1_share: u16 =  self.rng.gen();
+        let channel_garbler_1 = self.get_channel_garbler_1();
+        channel_garbler_1.write_u16(garbler_1_share)?;
 
-        let p2 = (p1 as u32 + input as u32) % modulus as u32;
-        let channel_p2 = self.get_channel_p2();
-        channel_p2.write_u16(p2 as u16)?;
+        let garbler_2_share = (garbler_1_share as u32 + input as u32) % modulus as u32;
+        let channel_garbler_2 = self.get_channel_garbler_2();
+        channel_garbler_2.write_u16(garbler_2_share as u16)?;
 
         Ok(())
     }
@@ -89,9 +89,9 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
 
         let labels = moduli.iter().map(|q| {
             let block = if from == PartyId::Garbler1 {
-                self.get_channel_p1().read_block()
+                self.get_channel_garbler_1().read_block()
             } else {
-                self.get_channel_p2().read_block()
+                self.get_channel_garbler_2().read_block()
             }?;
             Ok(Wire::from_block(block, *q))
         }).collect::<Result<Vec<Wire>, Error>>()?;
@@ -119,11 +119,11 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
         }
         self.evaluator.get_channel().flush()?;
 
-        let wires_p1 = self.receive_many(PartyId::Garbler1, moduli)?;
-        let wires_p2 = self.receive_many(PartyId::Garbler2, moduli)?;
-        wires_p1
+        let wires_garbler_1 = self.receive_many(PartyId::Garbler1, moduli)?;
+        let wires_garbler_2 = self.receive_many(PartyId::Garbler2, moduli)?;
+        wires_garbler_1
             .iter()
-            .zip(wires_p2.iter())
+            .zip(wires_garbler_2.iter())
             .map(|(w1, w2)| self.evaluator.sub(w2, w1).map_err(Self::Error::from))
             .collect()
     }
@@ -214,25 +214,25 @@ impl<C: AbstractChannel, H: Input> Read for HashedRead<C, H> {
 }
 
 impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> VerifyChannel<C1, C2, H> {
-    fn new(mut channel_p1: C1, mut channel_p2: C2, alternate_every: usize) -> Result<Self, Error> {
+    fn new(mut channel_garbler_1: C1, mut channel_garbler_2: C2, alternate_every: usize) -> Result<Self, Error> {
         let mut hash_key1 = GenericArray::default();
         let mut hash_key2 = GenericArray::default();
         // Each party generates the seed that will hash the other party's data, protecting the seed
         // from the party it checks.
-        channel_p1.read_exact(&mut hash_key2)?;
-        channel_p2.read_exact(&mut hash_key1)?;
+        channel_garbler_1.read_exact(&mut hash_key2)?;
+        channel_garbler_2.read_exact(&mut hash_key1)?;
 
         Ok(VerifyChannel {
-            channel_p1: HashedRead { channel: channel_p1, hash: UniversalDigest::new(&hash_key1) },
-            channel_p2: HashedRead { channel: channel_p2, hash: UniversalDigest::new(&hash_key2) },
+            channel_garbler_1: HashedRead { channel: channel_garbler_1, hash: UniversalDigest::new(&hash_key1) },
+            channel_garbler_2: HashedRead { channel: channel_garbler_2, hash: UniversalDigest::new(&hash_key2) },
             alternate_every,
             bytes_hashed: 0,
         })
     }
 
     fn check_hashes(&mut self) -> Result<(), Error> {
-        if self.channel_p1.read_hash()? != self.channel_p2.compute_hash() ||
-           self.channel_p2.read_hash()? != self.channel_p1.compute_hash() {
+        if self.channel_garbler_1.read_hash()? != self.channel_garbler_2.compute_hash() ||
+           self.channel_garbler_2.read_hash()? != self.channel_garbler_1.compute_hash() {
             return Err( Error::GarblerMismatch);
         }
         Ok(())
@@ -245,10 +245,10 @@ impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> Read for Verify
         let bytes_read;
         if self.bytes_hashed < self.alternate_every {
             let len = min(self.alternate_every - self.bytes_hashed, bytes.len());
-            bytes_read = self.channel_p1.read(&mut bytes[..len])?;
+            bytes_read = self.channel_garbler_1.read(&mut bytes[..len])?;
         } else {
             let len = min(2*self.alternate_every - self.bytes_hashed, bytes.len());
-            bytes_read = self.channel_p2.read(&mut bytes[..len])?;
+            bytes_read = self.channel_garbler_2.read(&mut bytes[..len])?;
         }
 
         self.bytes_hashed += bytes_read;
@@ -260,15 +260,15 @@ impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> Read for Verify
 impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> Write for VerifyChannel<C1, C2, H> {
     #[inline]
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        let bytes_written = self.channel_p1.channel.write(bytes)?;
-        self.channel_p2.channel.write_all(&bytes[..bytes_written])?;
+        let bytes_written = self.channel_garbler_1.channel.write(bytes)?;
+        self.channel_garbler_2.channel.write_all(&bytes[..bytes_written])?;
         Ok(bytes_written)
     }
 
     #[inline]
     fn flush(&mut self) -> io::Result<()> {
-        self.channel_p1.channel.flush()?;
-        self.channel_p2.channel.flush()
+        self.channel_garbler_1.channel.flush()?;
+        self.channel_garbler_2.channel.flush()
     }
 }
 

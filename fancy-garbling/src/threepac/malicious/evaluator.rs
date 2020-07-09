@@ -25,7 +25,7 @@ struct VerifyChannel<C1, C2, H: UniversalHash> {
     channel_p2: HashedRead<C2, UniversalDigest<H>>,
 
     alternate_every: usize,
-    index: usize,
+    bytes_hashed: usize,
 }
 
 /// Honest majority three party evaluator.
@@ -39,7 +39,9 @@ impl<C1, C2, RNG, H: UniversalHash> Evaluator<C1, C2, RNG, H> {}
 impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash>
     Evaluator<C1, C2, RNG, H>
 {
-    /// Make a new `Evaluator`.
+    /// Make a new `Evaluator`. The protocol calls for two `Garblers`, which are parties 1 and 2.
+    /// They take turns sending the garbled circuit to party 3, the evaluator, switching places
+    /// every `alternate_every` bytes. `alternate_every` must match between all 3 parties.
     pub fn new(channel_p1: C1, channel_p2: C2, rng: RNG, alternate_every: usize) -> Result<Self, Error> {
         let channel = VerifyChannel::new(channel_p1, channel_p2, alternate_every)?;
         let evaluator = Ev::new(channel);
@@ -172,7 +174,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
             .iter()
             .map(|x| Ok(self.evaluator.output(x)?.expect("Evaluator always outputs Some(u16)")))
             .collect::<Result<Vec<u16>, Self::Error>>()?;
-        self.evaluator.get_channel().check_hashes()?; // TODO: Anywhere else?
+        self.evaluator.get_channel().check_hashes()?;
 
         for x in xs.iter() {
             self.evaluator.get_channel().write_block(&x.as_block())?;
@@ -224,7 +226,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> VerifyChannel<C
             channel_p1: HashedRead { channel: channel_p1, hash: UniversalDigest::new(&hash_key1) },
             channel_p2: HashedRead { channel: channel_p2, hash: UniversalDigest::new(&hash_key2) },
             alternate_every,
-            index: 0,
+            bytes_hashed: 0,
         })
     }
 
@@ -241,16 +243,16 @@ impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> Read for Verify
     #[inline]
     fn read(&mut self, bytes: &mut [u8]) -> io::Result<usize> {
         let bytes_read;
-        if self.index < self.alternate_every {
-            let len = min(self.alternate_every - self.index, bytes.len());
+        if self.bytes_hashed < self.alternate_every {
+            let len = min(self.alternate_every - self.bytes_hashed, bytes.len());
             bytes_read = self.channel_p1.read(&mut bytes[..len])?;
         } else {
-            let len = min(2*self.alternate_every - self.index, bytes.len());
+            let len = min(2*self.alternate_every - self.bytes_hashed, bytes.len());
             bytes_read = self.channel_p2.read(&mut bytes[..len])?;
         }
 
-        self.index += bytes_read;
-        if self.index == 2*self.alternate_every { self.index = 0 }
+        self.bytes_hashed += bytes_read;
+        if self.bytes_hashed == 2*self.alternate_every { self.bytes_hashed = 0 }
         Ok(bytes_read)
     }
 }

@@ -19,7 +19,7 @@ struct AlternatingHashChannel<C, H> {
     hash: H,
 
     alternate_every: usize,
-    index: usize, // TODO: Better name for index
+    bytes_hashed: usize,
 }
 
 /// Honest majority three party garbler.
@@ -34,8 +34,10 @@ impl<
         H: UniversalHash,
     > Garbler<C3, RNG, H>
 {
-    /// Make a new `Garbler`.
-    pub fn new<C12: AbstractChannel>(party: PartyId, channel_p1_p2: &mut C12, channel_p3: C3, mut rng: RNG, alternate_every: usize) -> Result<Self, Error> { // TODO: Better name for alternate_every
+    /// Make a new `Garbler`. The protocol calls for two `Garblers`, which are parties 1 and 2. They
+    /// take turns sending the garbled circuit to party 3, the evaluator, switching places every
+    /// `alternate_every` bytes. `alternate_every` must match between all 3 parties.
+    pub fn new<C12: AbstractChannel>(party: PartyId, channel_p1_p2: &mut C12, channel_p3: C3, mut rng: RNG, alternate_every: usize) -> Result<Self, Error> {
         assert!(party != PartyId::Evaluator);
 
         let hash_channel = AlternatingHashChannel::new(channel_p3, &mut rng, alternate_every, party)?;
@@ -233,7 +235,7 @@ impl<C: AbstractChannel, H: UniversalHash> AlternatingHashChannel<C, UniversalDi
             channel,
             hash: UniversalDigest::new(&hash_key),
             alternate_every,
-            index: if party == PartyId::Garbler1 { alternate_every } else { 0 },
+            bytes_hashed: if party == PartyId::Garbler1 { alternate_every } else { 0 },
         })
     }
 }
@@ -256,18 +258,18 @@ impl<C: AbstractChannel, H: Input> Read for AlternatingHashChannel<C, H> {
 impl<C: AbstractChannel, H: Input> Write for AlternatingHashChannel<C, H> {
     #[inline]
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        if self.index < self.alternate_every {
-            let len = min(self.alternate_every - self.index, bytes.len());
+        if self.bytes_hashed < self.alternate_every {
+            let len = min(self.alternate_every - self.bytes_hashed, bytes.len());
             self.hash.input(&bytes[..len]);
 
-            self.index += len;
+            self.bytes_hashed += len;
             Ok(len)
         } else {
-            let len = min(2*self.alternate_every - self.index, bytes.len());
+            let len = min(2*self.alternate_every - self.bytes_hashed, bytes.len());
             let bytes_written = self.channel.write(&bytes[..len])?;
 
-            self.index += bytes_written;
-            if self.index == 2*self.alternate_every { self.index = 0 }
+            self.bytes_hashed += bytes_written;
+            if self.bytes_hashed == 2*self.alternate_every { self.bytes_hashed = 0 }
             Ok(bytes_written)
         }
     }

@@ -37,10 +37,10 @@ impl<
     /// Make a new `Garbler`. The protocol calls for two `Garblers`, which take turns sending the
     /// garbled circuit to the evaluator, switching places every `alternate_every` bytes.
     /// `alternate_every` must match between all 3 parties.
-    pub fn new<CG: AbstractChannel>(party: PartyId, channel_garblers : &mut CG, channel_evaluator: C, mut rng: RNG, alternate_every: usize) -> Result<Self, Error> {
+    pub fn new<CG: AbstractChannel>(party: PartyId, channel_garblers : &mut CG, channel_evaluator: C, rng: &mut RNG, alternate_every: usize) -> Result<Self, Error> {
         assert!(party != PartyId::Evaluator);
 
-        let hash_channel = AlternatingHashChannel::new(channel_evaluator, &mut rng, alternate_every, party)?;
+        let hash_channel = AlternatingHashChannel::new(channel_evaluator, rng, alternate_every, party)?;
 
         let seed: Block;
         if party == PartyId::Garbler1 {

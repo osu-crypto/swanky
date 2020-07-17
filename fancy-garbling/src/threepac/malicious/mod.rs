@@ -52,9 +52,9 @@ mod tests {
                     let (p3top1, p1top3) = unix_channel_pair();
                     let (p3top2, p2top3) = unix_channel_pair();
                     let handle1 = std::thread::spawn(move || {
-                        let rng = AesRng::new();
+                        let mut rng = AesRng::new();
                         let mut gb =
-                            Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler1, &mut p1top2, p1top3, rng, HASH_CHUNK_SIZE)?;
+                            Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler1, &mut p1top2, p1top3, &mut rng, HASH_CHUNK_SIZE)?;
                         let g1 = gb.encode(a, 3)?;
                         let g2 = gb.receive(PartyId::Garbler2, 3)?;
                         let ys = gb.receive(PartyId::Evaluator, 3)?;
@@ -63,9 +63,9 @@ mod tests {
                         addition(&mut gb, &inter_wire, &ys)
                     });
                     let handle2 = std::thread::spawn(move || {
-                        let rng = AesRng::new();
+                        let mut rng = AesRng::new();
                         let mut gb =
-                            Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler2, &mut p2top1, p2top3, rng, HASH_CHUNK_SIZE)?;
+                            Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler2, &mut p2top1, p2top3, &mut rng, HASH_CHUNK_SIZE)?;
                         let g1 = gb.receive(PartyId::Garbler1, 3)?;
                         let g2 = gb.encode(b, 3)?;
                         let ys = gb.receive(PartyId::Evaluator, 3)?;
@@ -128,17 +128,17 @@ mod tests {
         let (p3top1, p1top3) = unix_channel_pair();
         let (p3top2, p2top3) = unix_channel_pair();
         let handle1 = std::thread::spawn(move || {
-            let rng = AesRng::new();
+            let mut rng = AesRng::new();
             let mut gb =
-                Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler1, &mut p1top2, p1top3, rng, HASH_CHUNK_SIZE)?;
+                Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler1, &mut p1top2, p1top3, &mut rng, HASH_CHUNK_SIZE)?;
             let g1 = gb.crt_encode_many(&input, q)?;
             relu(&mut gb, &g1)
         });
 
         let handle2 = std::thread::spawn(move || {
-            let rng = AesRng::new();
+            let mut rng = AesRng::new();
             let mut gb =
-                Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler2, &mut p2top1, p2top3, rng, HASH_CHUNK_SIZE)?;
+                Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler2, &mut p2top1, p2top3, &mut rng, HASH_CHUNK_SIZE)?;
             let g1 = gb.crt_receive_many(PartyId::Garbler1, n, q)?;
             relu(&mut gb, &g1)
         });
@@ -167,9 +167,9 @@ mod tests {
         let (p3top2, p2top3) = unix_channel_pair();
 
         let handle1 = std::thread::spawn(move || {
-            let rng = AesRng::new();
+            let mut rng = AesRng::new();
             let mut gb =
-                Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler1, &mut p1top2, p1top3, rng, HASH_CHUNK_SIZE)?;
+                Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler1, &mut p1top2, p1top3, &mut rng, HASH_CHUNK_SIZE)?;
             let mut g1 = gb.encode_many(&vec![0_u16; 64], &vec![2; 64])?;
             let mut g2 = gb.receive_many(PartyId::Garbler2, &vec![2; 64])?;
             let ys = gb.receive_many(PartyId::Evaluator, &vec![2; 128])?;
@@ -179,9 +179,9 @@ mod tests {
         });
 
         let handle2 = std::thread::spawn(move || {
-            let rng = AesRng::new();
+            let mut rng = AesRng::new();
             let mut gb =
-                Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler2, &mut p2top1, p2top3, rng, HASH_CHUNK_SIZE)?;
+                Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler2, &mut p2top1, p2top3, &mut rng, HASH_CHUNK_SIZE)?;
             let mut g1 = gb.receive_many(PartyId::Garbler1, &vec![2; 64])?;
             let mut g2 = gb.encode_many(&vec![0_u16; 64], &vec![2; 64])?;
             let ys = gb.receive_many(PartyId::Evaluator, &vec![2; 128])?;

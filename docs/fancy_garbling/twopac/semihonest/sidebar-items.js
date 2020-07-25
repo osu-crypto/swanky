@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["Evaluator","Semi-honest evaluator."],["Garbler","Semi-honest garbler."]]});
+initSidebarItems({"enum":[["PartyId","The parties in this two-party computation protocol."]],"struct":[["Evaluator","Semi-honest evaluator."],["Garbler","Semi-honest garbler."]]});

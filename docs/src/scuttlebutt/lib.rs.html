@@ -49,6 +49,8 @@
 <span id="49">49</span>
 <span id="50">50</span>
 <span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// -*- mode: rust; -*-</span>
 <span class="comment">//</span>
@@ -76,6 +78,7 @@
 <span class="kw">mod</span> <span class="ident">hash_aes</span>;
 <span class="kw">mod</span> <span class="ident">rand_aes</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">utils</span>;
+<span class="kw">mod</span> <span class="ident">universal_digest</span>;
 
 <span class="kw">pub</span> <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">aes</span>::{
@@ -84,9 +87,10 @@
     },
     <span class="ident">block</span>::<span class="ident">Block</span>,
     <span class="ident">block512</span>::<span class="ident">Block512</span>,
-    <span class="ident">channel</span>::{<span class="ident">AbstractChannel</span>, <span class="ident">Channel</span>, <span class="ident">HashChannel</span>, <span class="ident">SyncChannel</span>, <span class="ident">TrackChannel</span>},
+    <span class="ident">channel</span>::{<span class="ident">AbstractChannel</span>, <span class="ident">Channel</span>, <span class="ident">HashChannel</span>, <span class="ident">TrackChannel</span>},
     <span class="ident">hash_aes</span>::{<span class="ident">AesHash</span>, <span class="ident">AES_HASH</span>},
     <span class="ident">rand_aes</span>::<span class="ident">AesRng</span>,
+    <span class="ident">universal_digest</span>::<span class="ident">UniversalDigest</span>,
 };
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">unix</span>)]</span>
@@ -102,4 +106,4 @@
 <span class="doccomment">/// A marker trait denoting that the given scheme is maliciously secure.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Malicious</span>: <span class="ident">SemiHonest</span> {}
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "scuttlebutt";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "scuttlebutt";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

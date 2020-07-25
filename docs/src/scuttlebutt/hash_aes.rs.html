@@ -116,7 +116,7 @@
     <span class="doccomment">/// &lt;https://eprint.iacr.org/2019/074&gt;, §7.3).</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// The function computes `H(σ(x))`, where `H` is a correlation-robust hash</span>
-    <span class="doccomment">/// function and `σ(x₀ || x₁) = (x₀ ⊕ x₁) || x₁`.</span>
+    <span class="doccomment">/// function and `σ(x₀ || x₁) = (x₀ ⊕ x₁) || x₀`.</span>
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ccr_hash</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">i</span>: <span class="ident">Block</span>, <span class="ident">x</span>: <span class="ident">Block</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Block</span> {
         <span class="kw">unsafe</span> {
@@ -142,4 +142,4 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "scuttlebutt";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "scuttlebutt";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

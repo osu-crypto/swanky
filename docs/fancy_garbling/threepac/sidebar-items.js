@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["malicious","Implementation of honest majority three-party malicous secure computation from \"Fast and Secure Three-party Computation: The Garbled Circuit Approach\"."]]});

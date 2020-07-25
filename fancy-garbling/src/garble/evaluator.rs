@@ -30,6 +30,7 @@ impl<C: AbstractChannel> Evaluator<C> {
         }
     }
 
+	/// Get the communication channel used to talk to the corresponding `Garbler`.
     pub fn get_channel(&mut self) -> &mut C {
         return &mut self.channel
     }

@@ -16,6 +16,7 @@ pub trait FancyInput {
     /// The type of error that this Fancy object emits.
     type Error: From<FancyError>;
 
+	/// The type representing a party in the protocol.
     type PartyId: Clone;
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -31,7 +32,7 @@ pub trait FancyInput {
         moduli: &[u16],
     ) -> Result<Vec<Self::Item>, Self::Error>;
 
-    /// Receive many values where the input is not known.
+    /// Receive many values where the input is not known. The values come from the party `from`.
     fn receive_many(&mut self, from: Self::PartyId, moduli: &[u16]) -> Result<Vec<Self::Item>, Self::Error>;
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +47,7 @@ pub trait FancyInput {
         Ok(xs.remove(0))
     }
 
-    /// Receive a single value.
+    /// Receive a single value form party `from`.
     fn receive(&mut self, from: Self::PartyId, modulus: u16) -> Result<Self::Item, Self::Error> {
         let mut xs = self.receive_many(from, &[modulus])?;
         Ok(xs.remove(0))
@@ -61,7 +62,7 @@ pub trait FancyInput {
         self.encode_many(values, moduli).map(Bundle::new)
     }
 
-    /// Receive a bundle.
+    /// Receive a bundle of values from party `from`.
     fn receive_bundle(&mut self, from: Self::PartyId, moduli: &[u16]) -> Result<Bundle<Self::Item>, Self::Error> {
         self.receive_many(from, moduli).map(Bundle::new)
     }
@@ -90,7 +91,7 @@ pub trait FancyInput {
         Ok(buns)
     }
 
-    /// Receive many input bundles.
+    /// Receive many input bundles from party `from`.
     fn receive_many_bundles(
         &mut self,
         from: Self::PartyId,
@@ -119,7 +120,7 @@ pub trait FancyInput {
         self.encode_bundle(&xs, &qs).map(CrtBundle::from)
     }
 
-    /// Receive an CRT input bundle.
+    /// Receive an CRT input bundle from party `from`.
     fn crt_receive(&mut self, from: Self::PartyId, modulus: u128) -> Result<CrtBundle<Self::Item>, Self::Error> {
         let qs = util::factor(modulus);
         self.receive_bundle(from, &qs).map(CrtBundle::from)
@@ -151,7 +152,7 @@ pub trait FancyInput {
         Ok(buns)
     }
 
-    /// Receive many CRT input bundles.
+    /// Receive many CRT input bundles from party `from`.
     fn crt_receive_many(
         &mut self,
         from: Self::PartyId,
@@ -182,7 +183,7 @@ pub trait FancyInput {
             .map(BinaryBundle::from)
     }
 
-    /// Receive an binary input bundle.
+    /// Receive an binary input bundle from party `from`.
     fn bin_receive(&mut self, from: Self::PartyId, nbits: usize) -> Result<BinaryBundle<Self::Item>, Self::Error> {
         self.receive_bundle(from, &vec![2; nbits]).map(BinaryBundle::from)
     }
@@ -208,7 +209,7 @@ pub trait FancyInput {
         Ok(buns)
     }
 
-    /// Receive many binary input bundles.
+    /// Receive many binary input bundles from party `from`.
     fn bin_receive_many(
         &mut self,
         from: Self::PartyId,

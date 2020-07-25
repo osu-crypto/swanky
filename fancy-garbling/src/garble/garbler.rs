@@ -33,6 +33,7 @@ impl<C: AbstractChannel, RNG: CryptoRng + RngCore> Garbler<C, RNG> {
         }
     }
 
+	/// Get the communication channel used to talk to the corresponding `Evaluator`.
     pub fn get_channel(&mut self) -> &mut C {
         return &mut self.channel
     }

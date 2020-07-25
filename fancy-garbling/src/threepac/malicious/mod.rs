@@ -6,6 +6,8 @@
 
 //! Implementation of honest majority three-party malicous secure computation from ["Fast and Secure Three-party Computation: The Garbled Circuit Approach"](https://eprint.iacr.org/2015/931.pdf).
 
+#![allow(missing_docs)]
+
 pub mod evaluator;
 pub mod garbler;
 

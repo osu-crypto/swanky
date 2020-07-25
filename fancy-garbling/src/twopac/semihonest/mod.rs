@@ -10,9 +10,13 @@ mod evaluator;
 mod garbler;
 
 
+/// The parties in this two-party computation protocol.
 #[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub enum PartyId {
+	/// The `Garbler` party.
     Garbler,
+
+	/// The `Evaluator` party.
     Evaluator,
 }
 

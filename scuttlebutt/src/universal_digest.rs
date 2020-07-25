@@ -17,6 +17,7 @@ pub struct UniversalDigest<H: UniversalHash> {
 }
 
 impl<H: UniversalHash> UniversalDigest<H> {
+    /// Create a `UniversalDigest` with the given `key`, which should be uniformly random.
     pub fn new(key: &GenericArray<u8, H::KeySize>) -> Self {
         Self::from(H::new(key))
     }

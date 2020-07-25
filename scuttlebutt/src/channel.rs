@@ -200,6 +200,7 @@ pub trait AbstractChannel: Read + Write {
 impl<C: Read + Write> AbstractChannel for C {}
 
 /// A standard read/write channel that implements `AbstractChannel`.
+#[allow(missing_docs)]
 pub struct Channel<R, W> {
     pub reader: R,
     pub writer: W,

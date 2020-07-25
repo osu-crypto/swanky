@@ -4,7 +4,7 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-//! Implementation of malicious three-party computation.
+//! Implementation of honest majority three-party malicous secure computation from ["Fast and Secure Three-party Computation: The Garbled Circuit Approach"](https://eprint.iacr.org/2015/931.pdf).
 
 pub mod evaluator;
 pub mod garbler;

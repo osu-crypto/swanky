@@ -28,7 +28,7 @@ struct VerifyChannel<C1, C2, H: UniversalHash> {
     bytes_hashed: usize,
 }
 
-/// Honest majority three party evaluator.
+/// Honest majority three party evaluator. Implementation of ["Fast and Secure Three-party Computation: The Garbled Circuit Approach"](https://eprint.iacr.org/2015/931.pdf).
 pub struct Evaluator<C1, C2, RNG, H: UniversalHash> {
     evaluator: Ev<VerifyChannel<C1, C2, H>>,
     rng: RNG,

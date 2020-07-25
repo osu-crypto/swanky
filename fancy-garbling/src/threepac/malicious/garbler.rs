@@ -22,7 +22,7 @@ struct AlternatingHashChannel<C, H> {
     bytes_hashed: usize,
 }
 
-/// Honest majority three party garbler.
+/// Honest majority three party garbler. Implementation of ["Fast and Secure Three-party Computation: The Garbled Circuit Approach"](https://eprint.iacr.org/2015/931.pdf).
 pub struct Garbler<C, RNG, H: UniversalHash> {
     garbler: Gb<AlternatingHashChannel<C, UniversalDigest<H>>, RNG>,
     party: PartyId,

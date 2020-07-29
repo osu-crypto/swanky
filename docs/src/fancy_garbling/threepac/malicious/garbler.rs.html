@@ -383,7 +383,7 @@
     <span class="ident">bytes_hashed</span>: <span class="ident">usize</span>,
 }
 
-<span class="doccomment">/// Honest majority three party garbler. Implementation of [&quot;Fast and Secure Three-party Computation: The Garbled Circuit Approach&quot;](https://eprint.iacr.org/2015/931.pdf).</span>
+<span class="doccomment">/// Honest-majority three party garbler. Implementation of [&quot;Fast and Secure Three-party Computation: The Garbled Circuit Approach&quot;](https://eprint.iacr.org/2015/931.pdf).</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Garbler</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">RNG</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> {
     <span class="ident">garbler</span>: <span class="ident">Gb</span><span class="op">&lt;</span><span class="ident">AlternatingHashChannel</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">UniversalDigest</span><span class="op">&lt;</span><span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">RNG</span><span class="op">&gt;</span>,
     <span class="ident">party</span>: <span class="ident">PartyId</span>,
@@ -423,7 +423,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">AbstractChannel</span>, <span class="ident">RNG</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">Rng</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">Garbler</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">RNG</span>, <span class="ident">H</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// Get the channel used to talk to the evaluator.</span>
+    <span class="doccomment">/// Get the channel used to talk to the evaluator.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_channel</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">C</span> {
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">get_hash_channel</span>().<span class="ident">channel</span>
     }

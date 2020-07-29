@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Error","Errors produced by `threepac` Garbler."]],"struct":[["Garbler","Honest majority three party garbler. Implementation of \"Fast and Secure Three-party Computation: The Garbled Circuit Approach\"."]]});
+initSidebarItems({"enum":[["Error","Errors produced by `threepac` Garbler."]],"struct":[["Garbler","Honest-majority three party garbler. Implementation of \"Fast and Secure Three-party Computation: The Garbled Circuit Approach\"."]]});

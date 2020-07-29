@@ -11,9 +11,6 @@ edition = "2018"
 autobenches = false
 publish = false
 
-[lib]
-doctest = false
-
 [features]
 nightly = ["rand/nightly", "scuttlebutt/nightly"]
 serde1 = ["serde", "scuttlebutt/serde1"]

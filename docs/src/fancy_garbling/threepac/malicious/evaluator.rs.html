@@ -417,7 +417,7 @@
     <span class="ident">bytes_hashed</span>: <span class="ident">usize</span>,
 }
 
-<span class="doccomment">/// Honest majority three party evaluator. Implementation of [&quot;Fast and Secure Three-party Computation: The Garbled Circuit Approach&quot;](https://eprint.iacr.org/2015/931.pdf).</span>
+<span class="doccomment">/// Honest-majority three party evaluator. Implementation of [&quot;Fast and Secure Three-party Computation: The Garbled Circuit Approach&quot;](https://eprint.iacr.org/2015/931.pdf).</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Evaluator</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">RNG</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> {
     <span class="ident">evaluator</span>: <span class="ident">Ev</span><span class="op">&lt;</span><span class="ident">VerifyChannel</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">H</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">rng</span>: <span class="ident">RNG</span>,

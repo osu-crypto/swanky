@@ -4,14 +4,26 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{errors::{GarblerError, FancyError}, util::tweak2, Fancy, FancyInput, FancyReveal, HasModulus, Garbler as Gb, threepac::malicious::PartyId, Wire};
+use crate::{
+    errors::{FancyError, GarblerError},
+    threepac::malicious::PartyId,
+    util::tweak2,
+    Fancy,
+    FancyInput,
+    FancyReveal,
+    Garbler as Gb,
+    HasModulus,
+    Wire,
+};
 use digest::{FixedOutput, Input, Reset};
 use rand::{CryptoRng, Rng, SeedableRng};
-use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious, UniversalDigest};
-use std::cmp::min;
-use std::io;
-use std::io::{Read, Write};
-use std::slice::from_ref;
+use scuttlebutt::{AbstractChannel, Block, Malicious, SemiHonest, UniversalDigest};
+use std::{
+    cmp::min,
+    io,
+    io::{Read, Write},
+    slice::from_ref,
+};
 use universal_hash::{generic_array::GenericArray, UniversalHash};
 
 struct AlternatingHashChannel<C, H> {
@@ -28,19 +40,23 @@ pub struct Garbler<C, RNG, H: UniversalHash> {
     party: PartyId,
 }
 
-impl<
-        C: AbstractChannel,
-        RNG: CryptoRng + Rng + SeedableRng<Seed = Block>,
-        H: UniversalHash,
-    > Garbler<C, RNG, H>
+impl<C: AbstractChannel, RNG: CryptoRng + Rng + SeedableRng<Seed = Block>, H: UniversalHash>
+    Garbler<C, RNG, H>
 {
     /// Make a new `Garbler`. The protocol calls for two `Garblers`, which take turns sending the
     /// garbled circuit to the evaluator, switching places every `alternate_every` bytes.
     /// `alternate_every` must match between all 3 parties.
-    pub fn new<CG: AbstractChannel>(party: PartyId, channel_garblers : &mut CG, channel_evaluator: C, rng: &mut RNG, alternate_every: usize) -> Result<Self, Error> {
+    pub fn new<CG: AbstractChannel>(
+        party: PartyId,
+        channel_garblers: &mut CG,
+        channel_evaluator: C,
+        rng: &mut RNG,
+        alternate_every: usize,
+    ) -> Result<Self, Error> {
         assert!(party != PartyId::Evaluator);
 
-        let hash_channel = AlternatingHashChannel::new(channel_evaluator, rng, alternate_every, party)?;
+        let hash_channel =
+            AlternatingHashChannel::new(channel_evaluator, rng, alternate_every, party)?;
 
         let seed: Block;
         if party == PartyId::Garbler1 {
@@ -53,19 +69,12 @@ impl<
 
         let garbler = Gb::new(hash_channel, RNG::from_seed(seed));
 
-        Ok(Garbler {
-            garbler,
-            party,
-        })
+        Ok(Garbler { garbler, party })
     }
 }
 
-impl<
-        C: AbstractChannel,
-        RNG: CryptoRng + Rng,
-        H: UniversalHash,
-    > Garbler<C, RNG, H>
-{
+impl<C: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> Garbler<C, RNG, H> {
+	/// Get the channel used to talk to the evaluator.
     pub fn get_channel(&mut self) -> &mut C {
         &mut self.get_hash_channel().channel
     }
@@ -80,7 +89,8 @@ impl<
         let delta = self.garbler.delta(q);
         let mut label = zero.minus(&delta.cmul(zero.color()));
         for i in 0..q {
-            self.get_hash_channel().write_block(&label.hash(tweak2(i as u64, 2)))?;
+            self.get_hash_channel()
+                .write_block(&label.hash(tweak2(i as u64, 2)))?;
             label = label.plus_mov(&delta);
         }
 
@@ -88,12 +98,7 @@ impl<
     }
 }
 
-impl<
-        C: AbstractChannel,
-        RNG: CryptoRng + Rng,
-        H: UniversalHash,
-    > FancyInput for Garbler<C, RNG, H>
-{
+impl<C: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> FancyInput for Garbler<C, RNG, H> {
     type Item = Wire;
     type Error = Error;
     type PartyId = PartyId;
@@ -124,9 +129,10 @@ impl<
 
         if from == PartyId::Evaluator {
             self.get_hash_channel().flush()?;
-            let shares = qs.iter().map(|_q|
-                self.get_channel().read_u16().map_err(Self::Error::from)
-            ).collect::<Result<Vec<u16>, Error>>()?;
+            let shares = qs
+                .iter()
+                .map(|_q| self.get_channel().read_u16().map_err(Self::Error::from))
+                .collect::<Result<Vec<u16>, Error>>()?;
 
             let (wires1, wires2);
             if self.party == PartyId::Garbler1 {
@@ -136,17 +142,21 @@ impl<
                 wires1 = self.receive_many(PartyId::Garbler1, qs)?;
                 wires2 = self.encode_many(&shares, qs)?;
             }
-            let wires = wires1.iter()
+            let wires = wires1
+                .iter()
                 .zip(wires2.iter())
                 .map(|(w1, w2)| self.garbler.sub(w2, w1).map_err(Self::Error::from))
                 .collect::<Result<Vec<Wire>, Error>>()?;
             Ok(wires)
         } else {
-            let wires = qs.iter().map(|q| {
-                let zero = self.garbler.create_wire(*q);
-                self.send_commitments(&zero)?;
-                Ok(zero)
-            }).collect::<Result<Vec<Wire>, Error>>()?;
+            let wires = qs
+                .iter()
+                .map(|q| {
+                    let zero = self.garbler.create_wire(*q);
+                    self.send_commitments(&zero)?;
+                    Ok(zero)
+                })
+                .collect::<Result<Vec<Wire>, Error>>()?;
 
             self.get_hash_channel().send_hash()?;
 
@@ -155,7 +165,7 @@ impl<
     }
 }
 
-impl<C: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash, > Fancy for Garbler<C, RNG, H> {
+impl<C: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> Fancy for Garbler<C, RNG, H> {
     type Item = Wire;
     type Error = Error;
 
@@ -190,7 +200,9 @@ impl<C: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash, > Fancy for Gar
     }
 }
 
-impl<C: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash, > FancyReveal for Garbler<C, RNG, H> {
+impl<C: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> FancyReveal
+    for Garbler<C, RNG, H>
+{
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
         Ok(self.reveal_many(from_ref(x))?[0])
     }
@@ -225,7 +237,12 @@ impl<C: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> SemiHonest for 
 impl<C: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> Malicious for Garbler<C, RNG, H> {}
 
 impl<C: AbstractChannel, H: UniversalHash> AlternatingHashChannel<C, UniversalDigest<H>> {
-    fn new<RNG: CryptoRng + Rng>(mut channel: C, rng: &mut RNG, alternate_every: usize, party: PartyId) -> Result<Self, Error> {
+    fn new<RNG: CryptoRng + Rng>(
+        mut channel: C,
+        rng: &mut RNG,
+        alternate_every: usize,
+        party: PartyId,
+    ) -> Result<Self, Error> {
         let mut hash_key = GenericArray::default();
         rng.fill(hash_key.as_mut_slice());
         channel.write_all(&hash_key)?;
@@ -235,7 +252,11 @@ impl<C: AbstractChannel, H: UniversalHash> AlternatingHashChannel<C, UniversalDi
             channel,
             hash: UniversalDigest::new(&hash_key),
             alternate_every,
-            bytes_hashed: if party == PartyId::Garbler1 { alternate_every } else { 0 },
+            bytes_hashed: if party == PartyId::Garbler1 {
+                alternate_every
+            } else {
+                0
+            },
         })
     }
 }
@@ -265,11 +286,13 @@ impl<C: AbstractChannel, H: Input> Write for AlternatingHashChannel<C, H> {
             self.bytes_hashed += len;
             Ok(len)
         } else {
-            let len = min(2*self.alternate_every - self.bytes_hashed, bytes.len());
+            let len = min(2 * self.alternate_every - self.bytes_hashed, bytes.len());
             let bytes_written = self.channel.write(&bytes[..len])?;
 
             self.bytes_hashed += bytes_written;
-            if self.bytes_hashed == 2*self.alternate_every { self.bytes_hashed = 0 }
+            if self.bytes_hashed == 2 * self.alternate_every {
+                self.bytes_hashed = 0
+            }
             Ok(bytes_written)
         }
     }

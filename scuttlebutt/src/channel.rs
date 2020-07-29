@@ -23,8 +23,8 @@ use std::{
     io::{IoSlice, IoSliceMut, Read, Result, Write},
 };
 
-/// A trait for managing I/O. `AbstractChannel`s are clonable, and provide basic
-/// read/write capabilities for both common and scuttlebutt-specific types.
+/// A trait for managing I/O. `AbstractChannel`s are essentially just [`Read`]` + `[`Write`], but
+/// provide convience methods for sending and receiving both common and scuttlebutt-specific types.
 pub trait AbstractChannel: Read + Write {
     /// Read `nbytes` from the channel, and return it as a `Vec`.
     fn read_vec(&mut self, nbytes: usize) -> Result<Vec<u8>> {

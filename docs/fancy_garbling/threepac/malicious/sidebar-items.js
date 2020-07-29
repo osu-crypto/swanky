@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["PartyId",""]],"mod":[["evaluator",""],["garbler",""]]});
+initSidebarItems({"enum":[["PartyId","Identify a participant in the garbled circuit protocol. There are two garblers and one evaluator."]],"mod":[["evaluator",""],["garbler",""]]});

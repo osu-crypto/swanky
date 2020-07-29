@@ -11,6 +11,8 @@
 pub mod evaluator;
 pub mod garbler;
 
+/// Identify a participant in the garbled circuit protocol. There are two garblers and one
+/// evaluator.
 #[derive(Debug, Clone, Copy, Eq, Ord, PartialEq, PartialOrd)]
 pub enum PartyId {
     Garbler1,

@@ -206,6 +206,8 @@
 <span id="206">206</span>
 <span id="207">207</span>
 <span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// -*- mode: rust; -*-</span>
 <span class="comment">//</span>
@@ -220,6 +222,8 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">evaluator</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">garbler</span>;
 
+<span class="doccomment">/// Identify a participant in the garbled circuit protocol. There are two garblers and one</span>
+<span class="doccomment">/// evaluator.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>, <span class="ident">Eq</span>, <span class="ident">Ord</span>, <span class="ident">PartialEq</span>, <span class="ident">PartialOrd</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">PartyId</span> {
     <span class="ident">Garbler1</span>,

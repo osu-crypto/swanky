@@ -317,6 +317,61 @@
 <span id="317">317</span>
 <span id="318">318</span>
 <span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// -*- mode: rust; -*-</span>
 <span class="comment">//</span>
@@ -324,15 +379,29 @@
 <span class="comment">// Copyright © 2019 Galois, Inc.</span>
 <span class="comment">// See LICENSE for licensing information.</span>
 
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">errors</span>::{<span class="ident">EvaluatorError</span>, <span class="ident">FancyError</span>}, <span class="ident">util</span>::<span class="ident">tweak2</span>, <span class="ident">Evaluator</span> <span class="kw">as</span> <span class="ident">Ev</span>, <span class="ident">Fancy</span>, <span class="ident">FancyInput</span>, <span class="ident">FancyReveal</span>, <span class="ident">threepac</span>::<span class="ident">malicious</span>::<span class="ident">PartyId</span>, <span class="ident">Wire</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{
+    <span class="ident">errors</span>::{<span class="ident">EvaluatorError</span>, <span class="ident">FancyError</span>},
+    <span class="ident">threepac</span>::<span class="ident">malicious</span>::<span class="ident">PartyId</span>,
+    <span class="ident">util</span>::<span class="ident">tweak2</span>,
+    <span class="ident">Evaluator</span> <span class="kw">as</span> <span class="ident">Ev</span>,
+    <span class="ident">Fancy</span>,
+    <span class="ident">FancyInput</span>,
+    <span class="ident">FancyReveal</span>,
+    <span class="ident">Wire</span>,
+};
 <span class="kw">use</span> <span class="ident">digest</span>::{<span class="ident">FixedOutput</span>, <span class="ident">Input</span>, <span class="ident">Reset</span>};
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">CryptoRng</span>, <span class="ident">Rng</span>};
-<span class="kw">use</span> <span class="ident">scuttlebutt</span>::{<span class="ident">AbstractChannel</span>, <span class="ident">Block</span>, <span class="ident">SemiHonest</span>, <span class="ident">Malicious</span>, <span class="ident">UniversalDigest</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">cmp</span>::<span class="ident">min</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">io</span>;
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">io</span>::{<span class="ident">Read</span>, <span class="ident">Write</span>};
-<span class="kw">use</span> <span class="ident">std</span>::<span class="ident">slice</span>::<span class="ident">from_ref</span>;
-<span class="kw">use</span> <span class="ident">universal_hash</span>::{<span class="ident">generic_array</span>::{<span class="ident">ArrayLength</span>, <span class="ident">GenericArray</span>}, <span class="ident">UniversalHash</span>};
+<span class="kw">use</span> <span class="ident">scuttlebutt</span>::{<span class="ident">AbstractChannel</span>, <span class="ident">Block</span>, <span class="ident">Malicious</span>, <span class="ident">SemiHonest</span>, <span class="ident">UniversalDigest</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{
+    <span class="ident">cmp</span>::<span class="ident">min</span>,
+    <span class="ident">io</span>,
+    <span class="ident">io</span>::{<span class="ident">Read</span>, <span class="ident">Write</span>},
+    <span class="ident">slice</span>::<span class="ident">from_ref</span>,
+};
+<span class="kw">use</span> <span class="ident">universal_hash</span>::{
+    <span class="ident">generic_array</span>::{<span class="ident">ArrayLength</span>, <span class="ident">GenericArray</span>},
+    <span class="ident">UniversalHash</span>,
+};
 
 <span class="kw">struct</span> <span class="ident">HashedRead</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">H</span><span class="op">&gt;</span> {
     <span class="ident">channel</span>: <span class="ident">C</span>,
@@ -362,13 +431,15 @@
     <span class="doccomment">/// Make a new `Evaluator`. The protocol calls for two `Garblers`, which take turns sending the</span>
     <span class="doccomment">/// garbled circuit to the evaluator, switching places every `alternate_every` bytes.</span>
     <span class="doccomment">/// `alternate_every` must match between all 3 parties.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">channel_garbler_1</span>: <span class="ident">C1</span>, <span class="ident">channel_garbler_2</span>: <span class="ident">C2</span>, <span class="ident">rng</span>: <span class="ident">RNG</span>, <span class="ident">alternate_every</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(
+        <span class="ident">channel_garbler_1</span>: <span class="ident">C1</span>,
+        <span class="ident">channel_garbler_2</span>: <span class="ident">C2</span>,
+        <span class="ident">rng</span>: <span class="ident">RNG</span>,
+        <span class="ident">alternate_every</span>: <span class="ident">usize</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">channel</span> <span class="op">=</span> <span class="ident">VerifyChannel</span>::<span class="ident">new</span>(<span class="ident">channel_garbler_1</span>, <span class="ident">channel_garbler_2</span>, <span class="ident">alternate_every</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">evaluator</span> <span class="op">=</span> <span class="ident">Ev</span>::<span class="ident">new</span>(<span class="ident">channel</span>);
-        <span class="prelude-val">Ok</span>(<span class="self">Self</span> {
-            <span class="ident">evaluator</span>,
-            <span class="ident">rng</span>,
-        })
+        <span class="prelude-val">Ok</span>(<span class="self">Self</span> { <span class="ident">evaluator</span>, <span class="ident">rng</span> })
     }
 
     <span class="doccomment">/// Get communication channel with Garbler 1</span>
@@ -381,10 +452,9 @@
         <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">evaluator</span>.<span class="ident">get_channel</span>().<span class="ident">channel_garbler_2</span>.<span class="ident">channel</span>
     }
 
-
     <span class="doccomment">/// Secret share Evaluator input among Garbler 1 and 2.</span>
     <span class="kw">fn</span> <span class="ident">secret_share</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">input</span>: <span class="ident">u16</span>, <span class="ident">modulus</span>: <span class="ident">u16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">garbler_1_share</span>: <span class="ident">u16</span> <span class="op">=</span>  <span class="self">self</span>.<span class="ident">rng</span>.<span class="ident">gen</span>();
+        <span class="kw">let</span> <span class="ident">garbler_1_share</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">rng</span>.<span class="ident">gen</span>();
         <span class="kw">let</span> <span class="ident">channel_garbler_1</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_channel_garbler_1</span>();
         <span class="ident">channel_garbler_1</span>.<span class="ident">write_u16</span>(<span class="ident">garbler_1_share</span>)<span class="question-mark">?</span>;
 
@@ -407,18 +477,25 @@
     <span class="kw">fn</span> <span class="ident">receive_many</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">from</span>: <span class="ident">PartyId</span>, <span class="ident">moduli</span>: <span class="kw-2">&amp;</span>[<span class="ident">u16</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Wire</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">from</span> <span class="op">!</span><span class="op">=</span> <span class="ident">PartyId</span>::<span class="ident">Evaluator</span>);
 
-        <span class="kw">let</span> <span class="ident">labels</span> <span class="op">=</span> <span class="ident">moduli</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">q</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">from</span> <span class="op">=</span><span class="op">=</span> <span class="ident">PartyId</span>::<span class="ident">Garbler1</span> {
-                <span class="self">self</span>.<span class="ident">get_channel_garbler_1</span>().<span class="ident">read_block</span>()
-            } <span class="kw">else</span> {
-                <span class="self">self</span>.<span class="ident">get_channel_garbler_2</span>().<span class="ident">read_block</span>()
-            }<span class="question-mark">?</span>;
-            <span class="prelude-val">Ok</span>(<span class="ident">Wire</span>::<span class="ident">from_block</span>(<span class="ident">block</span>, <span class="kw-2">*</span><span class="ident">q</span>))
-        }).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Wire</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">labels</span> <span class="op">=</span> <span class="ident">moduli</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">q</span><span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">block</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">from</span> <span class="op">=</span><span class="op">=</span> <span class="ident">PartyId</span>::<span class="ident">Garbler1</span> {
+                    <span class="self">self</span>.<span class="ident">get_channel_garbler_1</span>().<span class="ident">read_block</span>()
+                } <span class="kw">else</span> {
+                    <span class="self">self</span>.<span class="ident">get_channel_garbler_2</span>().<span class="ident">read_block</span>()
+                }<span class="question-mark">?</span>;
+                <span class="prelude-val">Ok</span>(<span class="ident">Wire</span>::<span class="ident">from_block</span>(<span class="ident">block</span>, <span class="kw-2">*</span><span class="ident">q</span>))
+            })
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Wire</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
 
-        <span class="kw">let</span> <span class="ident">commitments</span> <span class="op">=</span> <span class="ident">labels</span>.<span class="ident">iter</span>().<span class="ident">zip</span>(<span class="ident">moduli</span>.<span class="ident">iter</span>()).<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">label</span>, <span class="ident">q</span>)<span class="op">|</span>
-            <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">evaluator</span>.<span class="ident">get_channel</span>().<span class="ident">read_blocks</span>(<span class="kw-2">*</span><span class="ident">q</span> <span class="kw">as</span> <span class="ident">usize</span>)<span class="question-mark">?</span>[<span class="ident">label</span>.<span class="ident">color</span>() <span class="kw">as</span> <span class="ident">usize</span>])
-        ).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">commitments</span> <span class="op">=</span> <span class="ident">labels</span>
+            .<span class="ident">iter</span>()
+            .<span class="ident">zip</span>(<span class="ident">moduli</span>.<span class="ident">iter</span>())
+            .<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">label</span>, <span class="ident">q</span>)<span class="op">|</span> {
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">evaluator</span>.<span class="ident">get_channel</span>().<span class="ident">read_blocks</span>(<span class="kw-2">*</span><span class="ident">q</span> <span class="kw">as</span> <span class="ident">usize</span>)<span class="question-mark">?</span>[<span class="ident">label</span>.<span class="ident">color</span>() <span class="kw">as</span> <span class="ident">usize</span>])
+            })
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>, <span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
 
         <span class="comment">// Make sure that we don&#39;t leak when one garbler sends some invalid commitments.</span>
         <span class="self">self</span>.<span class="ident">evaluator</span>.<span class="ident">get_channel</span>().<span class="ident">check_hashes</span>()<span class="question-mark">?</span>;
@@ -449,7 +526,9 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">RNG</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">Rng</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">Fancy</span> <span class="kw">for</span> <span class="ident">Evaluator</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">RNG</span>, <span class="ident">H</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">RNG</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">Rng</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">Fancy</span>
+    <span class="kw">for</span> <span class="ident">Evaluator</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">RNG</span>, <span class="ident">H</span><span class="op">&gt;</span>
+{
     <span class="kw">type</span> <span class="ident">Item</span> <span class="op">=</span> <span class="ident">Wire</span>;
     <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">Error</span>;
 
@@ -484,7 +563,9 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">RNG</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">Rng</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">FancyReveal</span> <span class="kw">for</span> <span class="ident">Evaluator</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">RNG</span>, <span class="ident">H</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">RNG</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">Rng</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">FancyReveal</span>
+    <span class="kw">for</span> <span class="ident">Evaluator</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">RNG</span>, <span class="ident">H</span><span class="op">&gt;</span>
+{
     <span class="kw">fn</span> <span class="ident">reveal</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">x</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">Item</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u16</span>, <span class="self">Self</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">reveal_many</span>(<span class="ident">from_ref</span>(<span class="ident">x</span>))<span class="question-mark">?</span>[<span class="number">0</span>])
     }
@@ -492,7 +573,12 @@
     <span class="kw">fn</span> <span class="ident">reveal_many</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">xs</span>: <span class="kw-2">&amp;</span>[<span class="self">Self</span>::<span class="ident">Item</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span>, <span class="self">Self</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">outputs</span> <span class="op">=</span> <span class="ident">xs</span>
             .<span class="ident">iter</span>()
-            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">evaluator</span>.<span class="ident">output</span>(<span class="ident">x</span>)<span class="question-mark">?</span>.<span class="ident">expect</span>(<span class="string">&quot;Evaluator always outputs Some(u16)&quot;</span>)))
+            .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> {
+                <span class="prelude-val">Ok</span>(<span class="self">self</span>
+                    .<span class="ident">evaluator</span>
+                    .<span class="ident">output</span>(<span class="ident">x</span>)<span class="question-mark">?</span>
+                    .<span class="ident">expect</span>(<span class="string">&quot;Evaluator always outputs Some(u16)&quot;</span>))
+            })
             .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u16</span><span class="op">&gt;</span>, <span class="self">Self</span>::<span class="ident">Error</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
         <span class="self">self</span>.<span class="ident">evaluator</span>.<span class="ident">get_channel</span>().<span class="ident">check_hashes</span>()<span class="question-mark">?</span>;
 
@@ -505,8 +591,14 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">RNG</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">Rng</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">SemiHonest</span> <span class="kw">for</span> <span class="ident">Evaluator</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">RNG</span>, <span class="ident">H</span><span class="op">&gt;</span> {}
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">RNG</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">Rng</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">Malicious</span> <span class="kw">for</span> <span class="ident">Evaluator</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">RNG</span>, <span class="ident">H</span><span class="op">&gt;</span> {}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">RNG</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">Rng</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">SemiHonest</span>
+    <span class="kw">for</span> <span class="ident">Evaluator</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">RNG</span>, <span class="ident">H</span><span class="op">&gt;</span>
+{
+}
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">RNG</span>: <span class="ident">CryptoRng</span> <span class="op">+</span> <span class="ident">Rng</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">Malicious</span>
+    <span class="kw">for</span> <span class="ident">Evaluator</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">RNG</span>, <span class="ident">H</span><span class="op">&gt;</span>
+{
+}
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">AbstractChannel</span>, <span class="ident">H</span>: <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">FixedOutput</span> <span class="op">+</span> <span class="ident">Reset</span><span class="op">&gt;</span> <span class="ident">HashedRead</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">H</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">compute_hash</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenericArray</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">H</span>::<span class="ident">OutputSize</span><span class="op">&gt;</span> {
@@ -534,7 +626,11 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">VerifyChannel</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">H</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">new</span>(<span class="kw-2">mut</span> <span class="ident">channel_garbler_1</span>: <span class="ident">C1</span>, <span class="kw-2">mut</span> <span class="ident">channel_garbler_2</span>: <span class="ident">C2</span>, <span class="ident">alternate_every</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">new</span>(
+        <span class="kw-2">mut</span> <span class="ident">channel_garbler_1</span>: <span class="ident">C1</span>,
+        <span class="kw-2">mut</span> <span class="ident">channel_garbler_2</span>: <span class="ident">C2</span>,
+        <span class="ident">alternate_every</span>: <span class="ident">usize</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hash_key1</span> <span class="op">=</span> <span class="ident">GenericArray</span>::<span class="ident">default</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hash_key2</span> <span class="op">=</span> <span class="ident">GenericArray</span>::<span class="ident">default</span>();
         <span class="comment">// Each party generates the seed that will hash the other party&#39;s data, protecting the seed</span>
@@ -543,17 +639,24 @@
         <span class="ident">channel_garbler_2</span>.<span class="ident">read_exact</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">hash_key1</span>)<span class="question-mark">?</span>;
 
         <span class="prelude-val">Ok</span>(<span class="ident">VerifyChannel</span> {
-            <span class="ident">channel_garbler_1</span>: <span class="ident">HashedRead</span> { <span class="ident">channel</span>: <span class="ident">channel_garbler_1</span>, <span class="ident">hash</span>: <span class="ident">UniversalDigest</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">hash_key1</span>) },
-            <span class="ident">channel_garbler_2</span>: <span class="ident">HashedRead</span> { <span class="ident">channel</span>: <span class="ident">channel_garbler_2</span>, <span class="ident">hash</span>: <span class="ident">UniversalDigest</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">hash_key2</span>) },
+            <span class="ident">channel_garbler_1</span>: <span class="ident">HashedRead</span> {
+                <span class="ident">channel</span>: <span class="ident">channel_garbler_1</span>,
+                <span class="ident">hash</span>: <span class="ident">UniversalDigest</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">hash_key1</span>),
+            },
+            <span class="ident">channel_garbler_2</span>: <span class="ident">HashedRead</span> {
+                <span class="ident">channel</span>: <span class="ident">channel_garbler_2</span>,
+                <span class="ident">hash</span>: <span class="ident">UniversalDigest</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">hash_key2</span>),
+            },
             <span class="ident">alternate_every</span>,
             <span class="ident">bytes_hashed</span>: <span class="number">0</span>,
         })
     }
 
     <span class="kw">fn</span> <span class="ident">check_hashes</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">Error</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">channel_garbler_1</span>.<span class="ident">read_hash</span>()<span class="question-mark">?</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">channel_garbler_2</span>.<span class="ident">compute_hash</span>() <span class="op">|</span><span class="op">|</span>
-           <span class="self">self</span>.<span class="ident">channel_garbler_2</span>.<span class="ident">read_hash</span>()<span class="question-mark">?</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">channel_garbler_1</span>.<span class="ident">compute_hash</span>() {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>( <span class="ident">Error</span>::<span class="ident">GarblerMismatch</span>);
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">channel_garbler_1</span>.<span class="ident">read_hash</span>()<span class="question-mark">?</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">channel_garbler_2</span>.<span class="ident">compute_hash</span>()
+            <span class="op">|</span><span class="op">|</span> <span class="self">self</span>.<span class="ident">channel_garbler_2</span>.<span class="ident">read_hash</span>()<span class="question-mark">?</span> <span class="op">!</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">channel_garbler_1</span>.<span class="ident">compute_hash</span>()
+        {
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="ident">GarblerMismatch</span>);
         }
         <span class="prelude-val">Ok</span>(())
     }
@@ -567,21 +670,27 @@
             <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">min</span>(<span class="self">self</span>.<span class="ident">alternate_every</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">bytes_hashed</span>, <span class="ident">bytes</span>.<span class="ident">len</span>());
             <span class="ident">bytes_read</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">channel_garbler_1</span>.<span class="ident">read</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bytes</span>[..<span class="ident">len</span>])<span class="question-mark">?</span>;
         } <span class="kw">else</span> {
-            <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">min</span>(<span class="number">2</span><span class="kw-2">*</span><span class="self">self</span>.<span class="ident">alternate_every</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">bytes_hashed</span>, <span class="ident">bytes</span>.<span class="ident">len</span>());
+            <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">min</span>(<span class="number">2</span> <span class="op">*</span> <span class="self">self</span>.<span class="ident">alternate_every</span> <span class="op">-</span> <span class="self">self</span>.<span class="ident">bytes_hashed</span>, <span class="ident">bytes</span>.<span class="ident">len</span>());
             <span class="ident">bytes_read</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">channel_garbler_2</span>.<span class="ident">read</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bytes</span>[..<span class="ident">len</span>])<span class="question-mark">?</span>;
         }
 
         <span class="self">self</span>.<span class="ident">bytes_hashed</span> <span class="op">+</span><span class="op">=</span> <span class="ident">bytes_read</span>;
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">bytes_hashed</span> <span class="op">=</span><span class="op">=</span> <span class="number">2</span><span class="kw-2">*</span><span class="self">self</span>.<span class="ident">alternate_every</span> { <span class="self">self</span>.<span class="ident">bytes_hashed</span> <span class="op">=</span> <span class="number">0</span> }
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">bytes_hashed</span> <span class="op">=</span><span class="op">=</span> <span class="number">2</span> <span class="op">*</span> <span class="self">self</span>.<span class="ident">alternate_every</span> {
+            <span class="self">self</span>.<span class="ident">bytes_hashed</span> <span class="op">=</span> <span class="number">0</span>
+        }
         <span class="prelude-val">Ok</span>(<span class="ident">bytes_read</span>)
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">Write</span> <span class="kw">for</span> <span class="ident">VerifyChannel</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">H</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">C1</span>: <span class="ident">AbstractChannel</span>, <span class="ident">C2</span>: <span class="ident">AbstractChannel</span>, <span class="ident">H</span>: <span class="ident">UniversalHash</span><span class="op">&gt;</span> <span class="ident">Write</span>
+    <span class="kw">for</span> <span class="ident">VerifyChannel</span><span class="op">&lt;</span><span class="ident">C1</span>, <span class="ident">C2</span>, <span class="ident">H</span><span class="op">&gt;</span>
+{
     <span class="attribute">#[<span class="ident">inline</span>]</span>
     <span class="kw">fn</span> <span class="ident">write</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">bytes</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">io</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">bytes_written</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">channel_garbler_1</span>.<span class="ident">channel</span>.<span class="ident">write</span>(<span class="ident">bytes</span>)<span class="question-mark">?</span>;
-        <span class="self">self</span>.<span class="ident">channel_garbler_2</span>.<span class="ident">channel</span>.<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>[..<span class="ident">bytes_written</span>])<span class="question-mark">?</span>;
+        <span class="self">self</span>.<span class="ident">channel_garbler_2</span>
+            .<span class="ident">channel</span>
+            .<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="ident">bytes</span>[..<span class="ident">bytes_written</span>])<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">bytes_written</span>)
     }
 
@@ -601,8 +710,9 @@
     <span class="ident">EvaluatorError</span>(<span class="ident">EvaluatorError</span>),
     <span class="doccomment">/// Processing the garbled circuit produced an error.</span>
     <span class="ident">FancyError</span>(<span class="ident">FancyError</span>),
-    <span class="doccomment">/// Garbler may be malicious!!!</span>
+    <span class="doccomment">/// Garblers sent different values. One may be malicious!!!</span>
     <span class="ident">GarblerMismatch</span>,
+    <span class="doccomment">/// Garbler committed to one value, then sent a different one.</span>
     <span class="ident">InvalidCommitment</span>,
 }
 

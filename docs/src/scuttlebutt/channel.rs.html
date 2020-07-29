@@ -276,8 +276,8 @@
     <span class="ident">io</span>::{<span class="ident">IoSlice</span>, <span class="ident">IoSliceMut</span>, <span class="ident">Read</span>, <span class="prelude-ty">Result</span>, <span class="ident">Write</span>},
 };
 
-<span class="doccomment">/// A trait for managing I/O. `AbstractChannel`s are clonable, and provide basic</span>
-<span class="doccomment">/// read/write capabilities for both common and scuttlebutt-specific types.</span>
+<span class="doccomment">/// A trait for managing I/O. `AbstractChannel`s are essentially just [`Read`]` + `[`Write`], but</span>
+<span class="doccomment">/// provide convience methods for sending and receiving both common and scuttlebutt-specific types.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">AbstractChannel</span>: <span class="ident">Read</span> <span class="op">+</span> <span class="ident">Write</span> {
     <span class="doccomment">/// Read `nbytes` from the channel, and return it as a `Vec`.</span>
     <span class="kw">fn</span> <span class="ident">read_vec</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">nbytes</span>: <span class="ident">usize</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {

@@ -4,15 +4,29 @@
 // Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
-use crate::{errors::{EvaluatorError, FancyError}, util::tweak2, Evaluator as Ev, Fancy, FancyInput, FancyReveal, threepac::malicious::PartyId, Wire};
+use crate::{
+    errors::{EvaluatorError, FancyError},
+    threepac::malicious::PartyId,
+    util::tweak2,
+    Evaluator as Ev,
+    Fancy,
+    FancyInput,
+    FancyReveal,
+    Wire,
+};
 use digest::{FixedOutput, Input, Reset};
 use rand::{CryptoRng, Rng};
-use scuttlebutt::{AbstractChannel, Block, SemiHonest, Malicious, UniversalDigest};
-use std::cmp::min;
-use std::io;
-use std::io::{Read, Write};
-use std::slice::from_ref;
-use universal_hash::{generic_array::{ArrayLength, GenericArray}, UniversalHash};
+use scuttlebutt::{AbstractChannel, Block, Malicious, SemiHonest, UniversalDigest};
+use std::{
+    cmp::min,
+    io,
+    io::{Read, Write},
+    slice::from_ref,
+};
+use universal_hash::{
+    generic_array::{ArrayLength, GenericArray},
+    UniversalHash,
+};
 
 struct HashedRead<C, H> {
     channel: C,
@@ -42,13 +56,15 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
     /// Make a new `Evaluator`. The protocol calls for two `Garblers`, which take turns sending the
     /// garbled circuit to the evaluator, switching places every `alternate_every` bytes.
     /// `alternate_every` must match between all 3 parties.
-    pub fn new(channel_garbler_1: C1, channel_garbler_2: C2, rng: RNG, alternate_every: usize) -> Result<Self, Error> {
+    pub fn new(
+        channel_garbler_1: C1,
+        channel_garbler_2: C2,
+        rng: RNG,
+        alternate_every: usize,
+    ) -> Result<Self, Error> {
         let channel = VerifyChannel::new(channel_garbler_1, channel_garbler_2, alternate_every)?;
         let evaluator = Ev::new(channel);
-        Ok(Self {
-            evaluator,
-            rng,
-        })
+        Ok(Self { evaluator, rng })
     }
 
     /// Get communication channel with Garbler 1
@@ -61,10 +77,9 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
         &mut self.evaluator.get_channel().channel_garbler_2.channel
     }
 
-
     /// Secret share Evaluator input among Garbler 1 and 2.
     fn secret_share(&mut self, input: u16, modulus: u16) -> Result<(), Error> {
-        let garbler_1_share: u16 =  self.rng.gen();
+        let garbler_1_share: u16 = self.rng.gen();
         let channel_garbler_1 = self.get_channel_garbler_1();
         channel_garbler_1.write_u16(garbler_1_share)?;
 
@@ -87,18 +102,25 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
     fn receive_many(&mut self, from: PartyId, moduli: &[u16]) -> Result<Vec<Wire>, Error> {
         assert!(from != PartyId::Evaluator);
 
-        let labels = moduli.iter().map(|q| {
-            let block = if from == PartyId::Garbler1 {
-                self.get_channel_garbler_1().read_block()
-            } else {
-                self.get_channel_garbler_2().read_block()
-            }?;
-            Ok(Wire::from_block(block, *q))
-        }).collect::<Result<Vec<Wire>, Error>>()?;
+        let labels = moduli
+            .iter()
+            .map(|q| {
+                let block = if from == PartyId::Garbler1 {
+                    self.get_channel_garbler_1().read_block()
+                } else {
+                    self.get_channel_garbler_2().read_block()
+                }?;
+                Ok(Wire::from_block(block, *q))
+            })
+            .collect::<Result<Vec<Wire>, Error>>()?;
 
-        let commitments = labels.iter().zip(moduli.iter()).map(|(label, q)|
-            Ok(self.evaluator.get_channel().read_blocks(*q as usize)?[label.color() as usize])
-        ).collect::<Result<Vec<Block>, Error>>()?;
+        let commitments = labels
+            .iter()
+            .zip(moduli.iter())
+            .map(|(label, q)| {
+                Ok(self.evaluator.get_channel().read_blocks(*q as usize)?[label.color() as usize])
+            })
+            .collect::<Result<Vec<Block>, Error>>()?;
 
         // Make sure that we don't leak when one garbler sends some invalid commitments.
         self.evaluator.get_channel().check_hashes()?;
@@ -129,7 +151,9 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> Fancy for Evaluator<C1, C2, RNG, H> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> Fancy
+    for Evaluator<C1, C2, RNG, H>
+{
     type Item = Wire;
     type Error = Error;
 
@@ -164,7 +188,9 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> FancyReveal for Evaluator<C1, C2, RNG, H> {
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> FancyReveal
+    for Evaluator<C1, C2, RNG, H>
+{
     fn reveal(&mut self, x: &Self::Item) -> Result<u16, Self::Error> {
         Ok(self.reveal_many(from_ref(x))?[0])
     }
@@ -172,7 +198,12 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
     fn reveal_many(&mut self, xs: &[Self::Item]) -> Result<Vec<u16>, Self::Error> {
         let outputs = xs
             .iter()
-            .map(|x| Ok(self.evaluator.output(x)?.expect("Evaluator always outputs Some(u16)")))
+            .map(|x| {
+                Ok(self
+                    .evaluator
+                    .output(x)?
+                    .expect("Evaluator always outputs Some(u16)"))
+            })
             .collect::<Result<Vec<u16>, Self::Error>>()?;
         self.evaluator.get_channel().check_hashes()?;
 
@@ -185,8 +216,14 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> SemiHonest for Evaluator<C1, C2, RNG, H> {}
-impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> Malicious for Evaluator<C1, C2, RNG, H> {}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> SemiHonest
+    for Evaluator<C1, C2, RNG, H>
+{
+}
+impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: UniversalHash> Malicious
+    for Evaluator<C1, C2, RNG, H>
+{
+}
 
 impl<C: AbstractChannel, H: Clone + FixedOutput + Reset> HashedRead<C, H> {
     fn compute_hash(&mut self) -> GenericArray<u8, H::OutputSize> {
@@ -214,7 +251,11 @@ impl<C: AbstractChannel, H: Input> Read for HashedRead<C, H> {
 }
 
 impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> VerifyChannel<C1, C2, H> {
-    fn new(mut channel_garbler_1: C1, mut channel_garbler_2: C2, alternate_every: usize) -> Result<Self, Error> {
+    fn new(
+        mut channel_garbler_1: C1,
+        mut channel_garbler_2: C2,
+        alternate_every: usize,
+    ) -> Result<Self, Error> {
         let mut hash_key1 = GenericArray::default();
         let mut hash_key2 = GenericArray::default();
         // Each party generates the seed that will hash the other party's data, protecting the seed
@@ -223,17 +264,24 @@ impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> VerifyChannel<C
         channel_garbler_2.read_exact(&mut hash_key1)?;
 
         Ok(VerifyChannel {
-            channel_garbler_1: HashedRead { channel: channel_garbler_1, hash: UniversalDigest::new(&hash_key1) },
-            channel_garbler_2: HashedRead { channel: channel_garbler_2, hash: UniversalDigest::new(&hash_key2) },
+            channel_garbler_1: HashedRead {
+                channel: channel_garbler_1,
+                hash: UniversalDigest::new(&hash_key1),
+            },
+            channel_garbler_2: HashedRead {
+                channel: channel_garbler_2,
+                hash: UniversalDigest::new(&hash_key2),
+            },
             alternate_every,
             bytes_hashed: 0,
         })
     }
 
     fn check_hashes(&mut self) -> Result<(), Error> {
-        if self.channel_garbler_1.read_hash()? != self.channel_garbler_2.compute_hash() ||
-           self.channel_garbler_2.read_hash()? != self.channel_garbler_1.compute_hash() {
-            return Err( Error::GarblerMismatch);
+        if self.channel_garbler_1.read_hash()? != self.channel_garbler_2.compute_hash()
+            || self.channel_garbler_2.read_hash()? != self.channel_garbler_1.compute_hash()
+        {
+            return Err(Error::GarblerMismatch);
         }
         Ok(())
     }
@@ -247,21 +295,27 @@ impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> Read for Verify
             let len = min(self.alternate_every - self.bytes_hashed, bytes.len());
             bytes_read = self.channel_garbler_1.read(&mut bytes[..len])?;
         } else {
-            let len = min(2*self.alternate_every - self.bytes_hashed, bytes.len());
+            let len = min(2 * self.alternate_every - self.bytes_hashed, bytes.len());
             bytes_read = self.channel_garbler_2.read(&mut bytes[..len])?;
         }
 
         self.bytes_hashed += bytes_read;
-        if self.bytes_hashed == 2*self.alternate_every { self.bytes_hashed = 0 }
+        if self.bytes_hashed == 2 * self.alternate_every {
+            self.bytes_hashed = 0
+        }
         Ok(bytes_read)
     }
 }
 
-impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> Write for VerifyChannel<C1, C2, H> {
+impl<C1: AbstractChannel, C2: AbstractChannel, H: UniversalHash> Write
+    for VerifyChannel<C1, C2, H>
+{
     #[inline]
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
         let bytes_written = self.channel_garbler_1.channel.write(bytes)?;
-        self.channel_garbler_2.channel.write_all(&bytes[..bytes_written])?;
+        self.channel_garbler_2
+            .channel
+            .write_all(&bytes[..bytes_written])?;
         Ok(bytes_written)
     }
 
@@ -281,8 +335,9 @@ pub enum Error {
     EvaluatorError(EvaluatorError),
     /// Processing the garbled circuit produced an error.
     FancyError(FancyError),
-    /// Garbler may be malicious!!!
+    /// Garblers sent different values. One may be malicious!!!
     GarblerMismatch,
+    /// Garbler committed to one value, then sent a different one.
     InvalidCommitment,
 }
 

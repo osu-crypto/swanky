@@ -83,6 +83,7 @@
 //! let (ev_channel_gb_1, gb_1_channel_ev) = unix_channel_pair();
 //! let (ev_channel_gb_2, gb_2_channel_ev) = unix_channel_pair();
 //! let (mut gb_1_channel_gb_2, mut gb_2_channel_gb_1) = unix_channel_pair();
+//!
 //! let handle_ev = std::thread::spawn(move || {
 //!     let mut ev = Evaluator::<UnixChannel, UnixChannel, AesRng, Poly1305>::new(
 //!         ev_channel_gb_1,

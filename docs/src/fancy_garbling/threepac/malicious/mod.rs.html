@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `fancy-garbling/src/threepac/malicious/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../../light.css" id="themeStyle"><script src="../../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../../fancy_garbling/index.html'><div class='logo-container'><img src='../../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../../settings.html"><img src="../../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `fancy-garbling/src/threepac/malicious/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../../ayu.css" disabled ><script src="../../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../../fancy_garbling/index.html'><div class='logo-container'><img src='../../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../../settings.html"><img src="../../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -400,11 +400,59 @@
 <span id="400">400</span>
 <span id="401">401</span>
 <span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
+<span id="428">428</span>
+<span id="429">429</span>
+<span id="430">430</span>
+<span id="431">431</span>
+<span id="432">432</span>
+<span id="433">433</span>
+<span id="434">434</span>
+<span id="435">435</span>
+<span id="436">436</span>
+<span id="437">437</span>
+<span id="438">438</span>
+<span id="439">439</span>
+<span id="440">440</span>
+<span id="441">441</span>
+<span id="442">442</span>
+<span id="443">443</span>
+<span id="444">444</span>
+<span id="445">445</span>
+<span id="446">446</span>
+<span id="447">447</span>
+<span id="448">448</span>
+<span id="449">449</span>
+<span id="450">450</span>
+<span id="451">451</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// -*- mode: rust; -*-</span>
 <span class="comment">//</span>
 <span class="comment">// This file is part of threepac.</span>
-<span class="comment">// Copyright © 2019 Galois, Inc.</span>
 <span class="comment">// See LICENSE for licensing information.</span>
 
 <span class="doccomment">//! # Three-party honest-majority multi-party computation with garbled circuits</span>
@@ -553,6 +601,56 @@
 <span class="doccomment">//! ```</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! ## Benchmarks</span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//! This module utilizes [`criterion`](https://docs.rs/criterion/0.3.3/criterion/) for benchmarking</span>
+<span class="doccomment">//! purposes. It is possible to run this benchmark on your own machine using cargo:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```</span>
+<span class="doccomment">//! $ cargo bench --bench malicious_3pc</span>
+<span class="doccomment">//! ```</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Our benchmark uses unix channels to simulate communication between the parties.</span>
+<span class="doccomment">//! We ran our benchmark with 10 samples and 100ms of warm up, evaluating AES, SHA-1, and SHA-256</span>
+<span class="doccomment">//! as the benchmark cases.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Following are the summarized results generated by a machine running on:</span>
+<span class="doccomment">//! Intel Core i7-8550U CPU @ 1.80GHz and 16 GB of DDR4 RAM.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ### AES Benchmark</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Evaluation of AES encryption between three parties</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! |              |Lower Bound| Estimate  |Upper Bound|</span>
+<span class="doccomment">//! |--------------|-----------|-----------|-----------|</span>
+<span class="doccomment">//! | **Mean**     | 6.2240 ms | 6.2356 ms | 6.2525 ms |</span>
+<span class="doccomment">//! | **Std. Dev.**| 3.6750 us | 25.533 us | 38.340 us |</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ### SHA-1 Benchmark</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Evaluation of SHA-1 hash between three parties</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! |              |Lower Bound| Estimate  |Upper Bound|</span>
+<span class="doccomment">//! |--------------|-----------|-----------|-----------|</span>
+<span class="doccomment">//! | **Mean**     | 30.695 ms | 30.972 ms | 31.304 ms |</span>
+<span class="doccomment">//! | **Std. Dev.**| 230.88 us | 526.50 us | 720.63 us |</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ### SHA-256 Benchmark</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Evaluation of SHA-256 hash between three parties</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! |              |Lower Bound| Estimate  |Upper Bound|</span>
+<span class="doccomment">//! |--------------|-----------|-----------|-----------|</span>
+<span class="doccomment">//! | **Mean**     | 55.387 ms | 55.509 ms | 55.669 ms |</span>
+<span class="doccomment">//! | **Std. Dev.**| 45.758 us | 244.34 us | 344.74 us |</span>
+<span class="doccomment">//! </span>
+<span class="doccomment">//!</span>
+ 
+ 
+
+
+
 
 <span class="comment">//#![cfg_attr(feature = &quot;nightly&quot;, doc(include = &quot;README.md&quot;))]</span>
 
@@ -595,7 +693,7 @@
         <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">F</span>,
         <span class="ident">a</span>: <span class="kw-2">&amp;</span><span class="ident">F</span>::<span class="ident">Item</span>,
         <span class="ident">b</span>: <span class="kw-2">&amp;</span><span class="ident">F</span>::<span class="ident">Item</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u16</span>, <span class="ident">F</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">u16</span>, <span class="ident">F</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">c</span> <span class="op">=</span> <span class="ident">f</span>.<span class="ident">add</span>(<span class="kw-2">&amp;</span><span class="ident">a</span>, <span class="kw-2">&amp;</span><span class="ident">b</span>)<span class="question-mark">?</span>;
         <span class="ident">f</span>.<span class="ident">reveal</span>(<span class="kw-2">&amp;</span><span class="ident">c</span>)
     }
@@ -608,7 +706,7 @@
                     <span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">p1top2</span>, <span class="kw-2">mut</span> <span class="ident">p2top1</span>) <span class="op">=</span> <span class="ident">unix_channel_pair</span>();
                     <span class="kw">let</span> (<span class="ident">p3top1</span>, <span class="ident">p1top3</span>) <span class="op">=</span> <span class="ident">unix_channel_pair</span>();
                     <span class="kw">let</span> (<span class="ident">p3top2</span>, <span class="ident">p2top3</span>) <span class="op">=</span> <span class="ident">unix_channel_pair</span>();
-                    <span class="kw">let</span> <span class="ident">handle1</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
+                    <span class="kw">let</span> <span class="ident">handle1</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">||</span> {
                         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">AesRng</span>::<span class="ident">new</span>();
                         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gb</span> <span class="op">=</span> <span class="ident">Garbler</span>::<span class="op">&lt;</span><span class="ident">UnixChannel</span>, <span class="ident">AesRng</span>, <span class="ident">Poly1305</span><span class="op">&gt;</span>::<span class="ident">new</span>(
                             <span class="ident">PartyId</span>::<span class="ident">Garbler1</span>,
@@ -624,7 +722,7 @@
                         <span class="kw">let</span> <span class="ident">inter_wire</span> <span class="op">=</span> <span class="ident">gb</span>.<span class="ident">add</span>(<span class="kw-2">&amp;</span><span class="ident">g1</span>, <span class="kw-2">&amp;</span><span class="ident">g2</span>)<span class="question-mark">?</span>;
                         <span class="ident">addition</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">gb</span>, <span class="kw-2">&amp;</span><span class="ident">inter_wire</span>, <span class="kw-2">&amp;</span><span class="ident">ys</span>)
                     });
-                    <span class="kw">let</span> <span class="ident">handle2</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
+                    <span class="kw">let</span> <span class="ident">handle2</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">||</span> {
                         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">AesRng</span>::<span class="ident">new</span>();
                         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gb</span> <span class="op">=</span> <span class="ident">Garbler</span>::<span class="op">&lt;</span><span class="ident">UnixChannel</span>, <span class="ident">AesRng</span>, <span class="ident">Poly1305</span><span class="op">&gt;</span>::<span class="ident">new</span>(
                             <span class="ident">PartyId</span>::<span class="ident">Garbler2</span>,
@@ -666,7 +764,7 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">relu</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fancy</span><span class="op">&gt;</span>(<span class="ident">b</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">F</span>, <span class="ident">xs</span>: <span class="kw-2">&amp;</span>[<span class="ident">CrtBundle</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Item</span><span class="op">&gt;</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">F</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">relu</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">Fancy</span><span class="op">&gt;</span>(<span class="ident">b</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">F</span>, <span class="ident">xs</span>: <span class="kw-2">&amp;</span>[<span class="ident">CrtBundle</span><span class="op">&lt;</span><span class="ident">F</span>::<span class="ident">Item</span><span class="op">&gt;</span>]) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;&gt;</span>, <span class="ident">F</span>::<span class="ident">Error</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">outputs</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
         <span class="kw">for</span> <span class="ident">x</span> <span class="kw">in</span> <span class="ident">xs</span>.<span class="ident">iter</span>() {
             <span class="kw">let</span> <span class="ident">q</span> <span class="op">=</span> <span class="ident">x</span>.<span class="ident">composite_modulus</span>();
@@ -684,7 +782,7 @@
         <span class="kw">let</span> <span class="ident">n</span> <span class="op">=</span> <span class="number">10</span>;
         <span class="kw">let</span> <span class="ident">ps</span> <span class="op">=</span> <span class="kw">crate</span>::<span class="ident">util</span>::<span class="ident">primes_with_width</span>(<span class="number">10</span>);
         <span class="kw">let</span> <span class="ident">q</span> <span class="op">=</span> <span class="kw">crate</span>::<span class="ident">util</span>::<span class="ident">product</span>(<span class="kw-2">&amp;</span><span class="ident">ps</span>);
-        <span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">n</span>).<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">rng</span>.<span class="ident">gen_u128</span>() <span class="op">%</span> <span class="ident">q</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+        <span class="kw">let</span> <span class="ident">input</span> <span class="op">=</span> (<span class="number">0</span>..<span class="ident">n</span>).<span class="ident">map</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">rng</span>.<span class="ident">gen_u128</span>() <span class="op">%</span> <span class="ident">q</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;&gt;</span>();
 
         <span class="comment">// Run dummy version.</span>
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">dummy</span> <span class="op">=</span> <span class="ident">Dummy</span>::<span class="ident">new</span>();
@@ -698,7 +796,7 @@
         <span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">p1top2</span>, <span class="kw-2">mut</span> <span class="ident">p2top1</span>) <span class="op">=</span> <span class="ident">unix_channel_pair</span>();
         <span class="kw">let</span> (<span class="ident">p3top1</span>, <span class="ident">p1top3</span>) <span class="op">=</span> <span class="ident">unix_channel_pair</span>();
         <span class="kw">let</span> (<span class="ident">p3top2</span>, <span class="ident">p2top3</span>) <span class="op">=</span> <span class="ident">unix_channel_pair</span>();
-        <span class="kw">let</span> <span class="ident">handle1</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
+        <span class="kw">let</span> <span class="ident">handle1</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">||</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">AesRng</span>::<span class="ident">new</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gb</span> <span class="op">=</span> <span class="ident">Garbler</span>::<span class="op">&lt;</span><span class="ident">UnixChannel</span>, <span class="ident">AesRng</span>, <span class="ident">Poly1305</span><span class="op">&gt;</span>::<span class="ident">new</span>(
                 <span class="ident">PartyId</span>::<span class="ident">Garbler1</span>,
@@ -711,7 +809,7 @@
             <span class="ident">relu</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">gb</span>, <span class="kw-2">&amp;</span><span class="ident">g1</span>)
         });
 
-        <span class="kw">let</span> <span class="ident">handle2</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
+        <span class="kw">let</span> <span class="ident">handle2</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">||</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">AesRng</span>::<span class="ident">new</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gb</span> <span class="op">=</span> <span class="ident">Garbler</span>::<span class="op">&lt;</span><span class="ident">UnixChannel</span>, <span class="ident">AesRng</span>, <span class="ident">Poly1305</span><span class="op">&gt;</span>::<span class="ident">new</span>(
                 <span class="ident">PartyId</span>::<span class="ident">Garbler2</span>,
@@ -751,7 +849,7 @@
         <span class="kw">let</span> (<span class="ident">p3top1</span>, <span class="ident">p1top3</span>) <span class="op">=</span> <span class="ident">unix_channel_pair</span>();
         <span class="kw">let</span> (<span class="ident">p3top2</span>, <span class="ident">p2top3</span>) <span class="op">=</span> <span class="ident">unix_channel_pair</span>();
 
-        <span class="kw">let</span> <span class="ident">handle1</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
+        <span class="kw">let</span> <span class="ident">handle1</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">||</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">AesRng</span>::<span class="ident">new</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gb</span> <span class="op">=</span> <span class="ident">Garbler</span>::<span class="op">&lt;</span><span class="ident">UnixChannel</span>, <span class="ident">AesRng</span>, <span class="ident">Poly1305</span><span class="op">&gt;</span>::<span class="ident">new</span>(
                 <span class="ident">PartyId</span>::<span class="ident">Garbler1</span>,
@@ -768,7 +866,7 @@
             <span class="ident">circ_1</span>.<span class="ident">eval</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">gb</span>, <span class="kw-2">&amp;</span><span class="ident">g1</span>, <span class="kw-2">&amp;</span><span class="ident">ys</span>)
         });
 
-        <span class="kw">let</span> <span class="ident">handle2</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">|</span><span class="op">|</span> {
+        <span class="kw">let</span> <span class="ident">handle2</span> <span class="op">=</span> <span class="ident">std</span>::<span class="ident">thread</span>::<span class="ident">spawn</span>(<span class="kw">move</span> <span class="op">||</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">rng</span> <span class="op">=</span> <span class="ident">AesRng</span>::<span class="ident">new</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">gb</span> <span class="op">=</span> <span class="ident">Garbler</span>::<span class="op">&lt;</span><span class="ident">UnixChannel</span>, <span class="ident">AesRng</span>, <span class="ident">Poly1305</span><span class="op">&gt;</span>::<span class="ident">new</span>(
                 <span class="ident">PartyId</span>::<span class="ident">Garbler2</span>,

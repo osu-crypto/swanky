@@ -1,7 +1,6 @@
 // -*- mode: rust; -*-
 //
 // This file is part of `twopac`.
-// Copyright © 2019 Galois, Inc.
 // See LICENSE for licensing information.
 
 //! Benchmarks for malicious 3PC using `fancy-garbling`.
@@ -51,9 +50,9 @@ fn _bench_circuit(circ: &Circuit, gb1_inputs: Vec<u16>, gb2_inputs: Vec<u16>, ev
     let n_ev_inputs = ev_inputs.len();
 
     let handle1 = std::thread::spawn(move || {
-        let rng = AesRng::new();
+        let mut rng = AesRng::new();
         let mut gb =
-            Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler1, &mut p1top2, p1top3, rng, HASH_CHUNK_SIZE)
+            Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler1, &mut p1top2, p1top3, &mut rng, HASH_CHUNK_SIZE)
             .unwrap();
         let mut xs1 = gb.encode_many(&gb1_inputs, &vec![2; n_gb1_inputs]).unwrap();
         let mut xs2 = gb.receive_many(PartyId::Garbler2, &vec![2; n_gb2_inputs]).unwrap();
@@ -63,9 +62,9 @@ fn _bench_circuit(circ: &Circuit, gb1_inputs: Vec<u16>, gb2_inputs: Vec<u16>, ev
         circ_1.eval(&mut gb, &xs1, &ys).unwrap();
     });
     let handle2 = std::thread::spawn(move || {
-        let rng = AesRng::new();
+        let mut rng = AesRng::new();
         let mut gb =
-            Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler2, &mut p2top1, p2top3, rng, HASH_CHUNK_SIZE)
+            Garbler::<UnixChannel, AesRng, Poly1305>::new(PartyId::Garbler2, &mut p2top1, p2top3, &mut rng, HASH_CHUNK_SIZE)
             .unwrap();
         let mut xs1 = gb.receive_many(PartyId::Garbler1, &vec![2; n_gb1_inputs]).unwrap();
         let mut xs2 = gb.encode_many(&gb2_inputs, &vec![2; n_gb2_inputs]).unwrap();

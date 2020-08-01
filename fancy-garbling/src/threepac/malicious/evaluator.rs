@@ -78,7 +78,7 @@ impl<C1: AbstractChannel, C2: AbstractChannel, RNG: CryptoRng + Rng, H: Universa
 
     /// Secret share Evaluator input among Garbler 1 and 2.
     fn secret_share(&mut self, input: u16, modulus: u16) -> Result<(), Error> {
-        let garbler_1_share: u16 = self.rng.gen();
+        let garbler_1_share: u16 = self.rng.gen_range(0, modulus);
         let channel_garbler_1 = self.get_channel_garbler_1();
         channel_garbler_1.write_u16(garbler_1_share)?;
 

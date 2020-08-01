@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `fancy-garbling/src/wire/npaths_tab.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>npaths_tab.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../fancy_garbling/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `fancy-garbling/src/wire/npaths_tab.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>npaths_tab.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../fancy_garbling/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -618,9 +618,9 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">util</span>;
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">lookup</span>(<span class="ident">q</span>: <span class="ident">u16</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">lookup</span>(<span class="ident">q</span>: <span class="ident">u16</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span> {
     <span class="kw">match</span> <span class="ident">q</span> {
-        <span class="number">5</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">5</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">5</span>,
             <span class="number">25</span>,
@@ -664,7 +664,7 @@
             <span class="number">9094947017729282379150390625</span>,
             <span class="number">45474735088646411895751953125</span>,
         ],
-        <span class="number">6</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">6</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">6</span>,
             <span class="number">36</span>,
@@ -708,7 +708,7 @@
             <span class="number">13367494538843734067838845976576</span>,
             <span class="number">80204967233062404407033075859456</span>,
         ],
-        <span class="number">7</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">7</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">7</span>,
             <span class="number">49</span>,
@@ -752,7 +752,7 @@
             <span class="number">6366805760909027985741435139224001</span>,
             <span class="number">44567640326363195900190045974568007</span>,
         ],
-        <span class="number">9</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">9</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">9</span>,
             <span class="number">81</span>,
@@ -786,7 +786,7 @@
             <span class="number">42391158275216203514294433201</span>,
             <span class="number">381520424476945831628649898809</span>,
         ],
-        <span class="number">10</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">10</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">10</span>,
             <span class="number">100</span>,
@@ -820,7 +820,7 @@
             <span class="number">1000000000000000000000000000000</span>,
             <span class="number">10000000000000000000000000000000</span>,
         ],
-        <span class="number">11</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">11</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">11</span>,
             <span class="number">121</span>,
@@ -854,7 +854,7 @@
             <span class="number">17449402268886407318558803753801</span>,
             <span class="number">191943424957750480504146841291811</span>,
         ],
-        <span class="number">12</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">12</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">12</span>,
             <span class="number">144</span>,
@@ -888,7 +888,7 @@
             <span class="number">237376313799769806328950291431424</span>,
             <span class="number">2848515765597237675947403497177088</span>,
         ],
-        <span class="number">13</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">13</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">13</span>,
             <span class="number">169</span>,
@@ -922,7 +922,7 @@
             <span class="number">2619995643649944960380551432833049</span>,
             <span class="number">34059943367449284484947168626829637</span>,
         ],
-        <span class="number">14</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">14</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">14</span>,
             <span class="number">196</span>,
@@ -956,7 +956,7 @@
             <span class="number">24201432355484595421941037243826176</span>,
             <span class="number">338820052976784335907174521413566464</span>,
         ],
-        <span class="number">15</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">15</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">15</span>,
             <span class="number">225</span>,
@@ -990,7 +990,7 @@
             <span class="number">191751059232884086668491363525390625</span>,
             <span class="number">2876265888493261300027370452880859375</span>,
         ],
-        <span class="number">17</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">17</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">17</span>,
             <span class="number">289</span>,
@@ -1017,7 +1017,7 @@
             <span class="number">19967568900859523802559065713</span>,
             <span class="number">339448671314611904643504117121</span>,
         ],
-        <span class="number">18</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">18</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">18</span>,
             <span class="number">324</span>,
@@ -1044,7 +1044,7 @@
             <span class="number">74347713614021927913318776832</span>,
             <span class="number">1338258845052394702439737982976</span>,
         ],
-        <span class="number">19</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">19</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">19</span>,
             <span class="number">361</span>,
@@ -1071,7 +1071,7 @@
             <span class="number">257829627945307727248226067259</span>,
             <span class="number">4898762930960846817716295277921</span>,
         ],
-        <span class="number">20</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">20</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">20</span>,
             <span class="number">400</span>,
@@ -1098,7 +1098,7 @@
             <span class="number">838860800000000000000000000000</span>,
             <span class="number">16777216000000000000000000000000</span>,
         ],
-        <span class="number">21</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">21</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">21</span>,
             <span class="number">441</span>,
@@ -1125,7 +1125,7 @@
             <span class="number">2576580875108218291929075869661</span>,
             <span class="number">54108198377272584130510593262881</span>,
         ],
-        <span class="number">22</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">22</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">22</span>,
             <span class="number">484</span>,
@@ -1152,7 +1152,7 @@
             <span class="number">7511413302012830262726227918848</span>,
             <span class="number">165251092644282265779977014214656</span>,
         ],
-        <span class="number">23</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">23</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">23</span>,
             <span class="number">529</span>,
@@ -1179,7 +1179,7 @@
             <span class="number">20880467999847912034355032910567</span>,
             <span class="number">480250763996501976790165756943041</span>,
         ],
-        <span class="number">24</span> <span class="op">=&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
+        <span class="number">24</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">vec</span><span class="macro">!</span>[
             <span class="number">1</span>,
             <span class="number">24</span>,
             <span class="number">576</span>,
@@ -1207,7 +1207,7 @@
             <span class="number">1333735776850284124449081472843776</span>,
         ],
         <span class="comment">// TODO: add more</span>
-        <span class="kw">_</span> <span class="op">=&gt;</span> {
+        <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">ndigits</span> <span class="op">=</span> <span class="ident">util</span>::<span class="ident">digits_per_u128</span>(<span class="ident">q</span>);
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">npaths_tab</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[<span class="number">1</span>; <span class="ident">ndigits</span>];
             <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">1</span>..<span class="ident">ndigits</span> {

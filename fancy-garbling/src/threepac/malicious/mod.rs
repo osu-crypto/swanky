@@ -150,11 +150,11 @@
 //! ```
 //!
 //! ## Benchmarks
-//! 
+//!
 //! This module utilizes [`criterion`](https://docs.rs/criterion/0.3.3/criterion/) for benchmarking
 //! purposes. It is possible to run this benchmark on your own machine using cargo:
 //!
-//! ```
+//! ```text
 //! $ cargo bench --bench malicious_3pc
 //! ```
 //!
@@ -193,15 +193,8 @@
 //! |--------------|-----------|-----------|-----------|
 //! | **Mean**     | 55.387 ms | 55.509 ms | 55.669 ms |
 //! | **Std. Dev.**| 45.758 us | 244.34 us | 344.74 us |
-//! 
 //!
- 
- 
 
-
-
-
-//#![cfg_attr(feature = "nightly", doc(include = "README.md"))]
 
 #![allow(missing_docs)]
 
